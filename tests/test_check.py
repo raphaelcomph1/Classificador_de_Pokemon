@@ -87,6 +87,17 @@ def test_apply_exclusions_marks_reasons() -> None:
     ]
 
 
+def test_apply_exclusions_keeps_largest_duplicate() -> None:
+    small = ImageRecord("Pikachu/a.jpg", "Pikachu", ".jpg", ok=True, width=100, height=100)
+    large = ImageRecord("Pikachu/b.jpg", "Pikachu", ".jpg", ok=True, width=400, height=300)
+    tie_1 = ImageRecord("Mew/a.jpg", "Mew", ".jpg", ok=True, width=50, height=50, dup_group=1)
+    tie_2 = ImageRecord("Mew/b.jpg", "Mew", ".jpg", ok=True, width=50, height=50, dup_group=1)
+    records = [small, large, tie_1, tie_2]
+    apply_exclusions(records, {"keep_one_per_duplicate_group": True})
+    assert [r.excluded for r in records] == [True, False, False, True]
+    assert small.exclude_reason == "duplicata (cópia extra)"
+
+
 def test_find_duplicate_groups_respects_threshold() -> None:
     hashes = [
         "0000000000000000",

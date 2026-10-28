@@ -14,11 +14,12 @@ seed: 42
 near_duplicate_max_distance: 4
 
 # Exclusões (marcadas no manifesto; nada é apagado de raw/)
-# Formas regionais não são Gen 1 e competem com a forma original (ver docs/decisoes.md).
-excluded_classes:
-  - Alolan Sandslash
+# Formas regionais (ex.: Alolan Sandslash) são classes próprias; ver docs/decisoes.md.
+excluded_classes: []
 # Mesma imagem em pastas diferentes (ex.: Pidgeot/Pidgeotto) = rótulo ambíguo -> remove o grupo todo.
 drop_cross_class_duplicates: true
+# Duplicatas na mesma classe: mantém só a de maior resolução (evita vazamento entre splits).
+keep_one_per_duplicate_group: true
 
 # Imagens menores que isso (em qualquer lado, em px) são sinalizadas no relatório.
 min_side_px: 32

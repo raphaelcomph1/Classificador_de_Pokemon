@@ -16,22 +16,21 @@ Dataset: `lantian773030/pokemonclassification` — pasta `raw/PokemonData`.
 | Grupos de (quase) duplicatas, pHash ≤ 4 | 55 (55 imagens a mais) |
 | Grupos com classes diferentes | 10 |
 | Imagens com lado < 32 px | 0 |
-| **Dataset final: classes / imagens** | **149 / 6764** |
+| **Dataset final: classes / imagens** | **150 / 6760** |
 
 ## Exclusões
 
 Nada é apagado de `raw/`: as exclusões ficam marcadas no `manifest.csv`
 (colunas `excluded` e `exclude_reason`) e as regras vêm de `configs/data.yaml`.
 
-- classe excluída: 41
+- duplicata (cópia extra): 45
 - duplicata entre classes: 20
 - arquivo inválido: 12
-- Classes excluídas: Alolan Sandslash
 
 ## Desbalanceamento (dataset final)
 
 - Mínimo: **25** (Alakazam) · Máximo: **66** (Venusaur)
-- Média: 45.4 · Mediana: 46 · Desvio padrão: 6.8
+- Média: 45.1 · Mediana: 46 · Desvio padrão: 6.7
 - Razão máx/mín: **2.6x**
 - Classes com menos da metade da mediana: 0
 
@@ -115,23 +114,23 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Abra | 35 |
 | Aerodactyl | 35 |
 | Alakazam | 25 |
-| Alolan Sandslash | — (excluída) |
-| Arbok | 41 |
+| Alolan Sandslash | 39 |
+| Arbok | 40 |
 | Arcanine | 41 |
 | Articuno | 45 |
 | Beedrill | 34 |
 | Bellsprout | 40 |
 | Blastoise | 42 |
-| Bulbasaur | 41 |
+| Bulbasaur | 39 |
 | Butterfree | 27 |
 | Caterpie | 37 |
 | Chansey | 43 |
 | Charizard | 35 |
 | Charmander | 51 |
-| Charmeleon | 46 |
+| Charmeleon | 45 |
 | Clefable | 38 |
-| Clefairy | 46 |
-| Cloyster | 48 |
+| Clefairy | 45 |
+| Cloyster | 47 |
 | Cubone | 39 |
 | Dewgong | 42 |
 | Diglett | 39 |
@@ -141,17 +140,17 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Dragonair | 42 |
 | Dragonite | 48 |
 | Dratini | 26 |
-| Drowzee | 39 |
-| Dugtrio | 51 |
+| Drowzee | 38 |
+| Dugtrio | 50 |
 | Eevee | 37 |
 | Ekans | 36 |
 | Electabuzz | 41 |
-| Electrode | 51 |
+| Electrode | 50 |
 | Exeggcute | 46 |
 | Exeggutor | 50 |
 | Farfetchd | 48 |
-| Fearow | 48 |
-| Flareon | 45 |
+| Fearow | 46 |
+| Flareon | 44 |
 | Gastly | 44 |
 | Gengar | 49 |
 | Geodude | 35 |
@@ -161,7 +160,7 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Golduck | 46 |
 | Golem | 46 |
 | Graveler | 39 |
-| Grimer | 43 |
+| Grimer | 42 |
 | Growlithe | 44 |
 | Gyarados | 46 |
 | Haunter | 48 |
@@ -170,12 +169,12 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Horsea | 54 |
 | Hypno | 47 |
 | Ivysaur | 40 |
-| Jigglypuff | 46 |
+| Jigglypuff | 45 |
 | Jolteon | 51 |
 | Jynx | 49 |
 | Kabuto | 49 |
 | Kabutops | 42 |
-| Kadabra | 48 |
+| Kadabra | 47 |
 | Kakuna | 47 |
 | Kangaskhan | 51 |
 | Kingler | 46 |
@@ -193,15 +192,15 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Mankey | 54 |
 | Marowak | 29 |
 | Meowth | 26 |
-| Metapod | 53 |
-| Mew | 54 |
+| Metapod | 52 |
+| Mew | 53 |
 | Mewtwo | 54 |
 | Moltres | 43 |
 | MrMime | 45 |
 | Muk | 42 |
 | Nidoking | 52 |
-| Nidoqueen | 52 |
-| Nidorina | 41 |
+| Nidoqueen | 51 |
+| Nidorina | 40 |
 | Nidorino | 51 |
 | Ninetales | 44 |
 | Oddish | 51 |
@@ -210,14 +209,14 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Onix | 42 |
 | Paras | 47 |
 | Parasect | 43 |
-| Persian | 37 |
+| Persian | 36 |
 | Pidgeot | 42 |
-| Pidgeotto | 39 |
+| Pidgeotto | 38 |
 | Pidgey | 48 |
-| Pikachu | 62 |
+| Pikachu | 56 |
 | Pinsir | 41 |
-| Poliwag | 51 |
-| Poliwhirl | 48 |
+| Poliwag | 50 |
+| Poliwhirl | 46 |
 | Poliwrath | 29 |
 | Ponyta | 45 |
 | Porygon | 46 |
@@ -226,12 +225,12 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Raichu | 51 |
 | Rapidash | 48 |
 | Raticate | 41 |
-| Rattata | 43 |
+| Rattata | 42 |
 | Rhydon | 50 |
 | Rhyhorn | 41 |
-| Sandshrew | 46 |
+| Sandshrew | 45 |
 | Sandslash | 45 |
-| Scyther | 57 |
+| Scyther | 56 |
 | Seadra | 48 |
 | Seaking | 46 |
 | Seel | 47 |
@@ -239,28 +238,41 @@ Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grup
 | Slowbro | 46 |
 | Slowpoke | 41 |
 | Snorlax | 59 |
-| Spearow | 55 |
-| Squirtle | 52 |
+| Spearow | 53 |
+| Squirtle | 50 |
 | Starmie | 49 |
 | Staryu | 47 |
 | Tangela | 53 |
-| Tauros | 54 |
+| Tauros | 53 |
 | Tentacool | 45 |
 | Tentacruel | 47 |
-| Vaporeon | 59 |
+| Vaporeon | 58 |
 | Venomoth | 52 |
 | Venonat | 47 |
 | Venusaur | 66 |
 | Victreebel | 49 |
 | Vileplume | 56 |
 | Voltorb | 55 |
-| Vulpix | 50 |
-| Wartortle | 48 |
+| Vulpix | 49 |
+| Wartortle | 46 |
 | Weedle | 49 |
 | Weepinbell | 43 |
 | Weezing | 50 |
 | Wigglytuff | 57 |
 | Zapdos | 51 |
-| Zubat | 40 |
+| Zubat | 39 |
 
 </details>
+
+<!-- split -->
+## Split
+
+Gerado por `python -m pokedex.data.split` · seed `42` · estratificado por classe · proporções {'train': 0.7, 'val': 0.15, 'test': 0.15}.
+
+| Split | Imagens | % | Mín. por classe | Máx. por classe |
+|---|---|---|---|---|
+| train | 4728 | 69.9% | 17 | 46 |
+| val | 1016 | 15.0% | 4 | 10 |
+| test | 1016 | 15.0% | 4 | 10 |
+
+Lista completa em `processed/splits.csv`.

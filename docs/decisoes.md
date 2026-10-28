@@ -45,7 +45,7 @@ Formato: data · decisão · alternativas · por quê.
 - **Alternativas:** apagar os arquivos de `raw/`; copiar só os bons para outra pasta.
 - **Por quê:** `raw/` fica idêntico ao download, então qualquer exclusão pode ser desfeita mudando `configs/data.yaml`. O `manifest.csv` registra *o quê* foi excluído e *por quê* (`exclude_reason`), o que facilita auditar depois.
 
-## 2026-10-28 · Formas regionais (Alolan Sandslash) fora do dataset
+## 2026-10-28 · Formas regionais (Alolan Sandslash) fora do dataset — *substituída pela decisão abaixo*
 
 - **Contexto:** o dataset tem 149 espécies da Gen 1 (faltam Nidoran♀ e Nidoran♂) + 1 forma regional, Alolan Sandslash. Por isso as fontes divergem entre 149 e 150 classes.
 - **Alternativas:** (a) classe separada; (b) juntar com Sandslash; (c) excluir.
@@ -60,3 +60,22 @@ Formato: data · decisão · alternativas · por quê.
 ## 2026-10-28 · Duplicatas entre classes removidas
 
 - **Por quê:** as 10 ocorrências eram pares de evolução com a mesma imagem (provavelmente artes com os dois Pokémon). Não existe rótulo certo para elas, e mantê-las ensinaria o modelo a confundir justamente as classes mais parecidas. Foram removidas as 20 imagens.
+
+## 2026-10-28 · Revisão: formas regionais como classes próprias (150 classes)
+
+- **Decisão:** Sandslash e Alolan Sandslash ficam como **duas classes separadas**. A exclusão anterior foi revertida (`excluded_classes: []`).
+- **Por quê:** mantém todos os dados disponíveis, e classes separadas respeitam a regra de que *uma classe = uma aparência*. Vale como padrão para o futuro: toda forma regional que entrar vira classe própria, com o nome da PokéAPI na Fase 3 (`Alolan Sandslash` → `sandslash-alola`).
+- **Ponto de atenção:** é o par mais parecido "por definição". Conferir na matriz de confusão da Fase 2 se o modelo os separa bem.
+
+## 2026-10-28 · Duplicatas na mesma classe: manter só uma (opção B)
+
+- **Alternativas:** (A) manter todas e sortear o split por grupo, com as cópias indo juntas; (B) manter só uma por grupo.
+- **Por quê (B):** remove só 45 imagens (0,7%) e elimina o risco de vazamento por construção. Na opção A, a cópia extra continuaria no treino e "pesaria em dobro". Fica a imagem de **maior resolução**; em caso de empate, a primeira pelo caminho (regra determinística).
+
+## 2026-10-28 · Split estratificado 70/15/15, seed 42
+
+- **Como:** cada classe é embaralhada e dividida separadamente (estratificação), então todas as classes aparecem em todos os splits na mesma proporção. Os arquivos são ordenados antes do embaralhamento, para que o resultado dependa só da seed e não da ordem do sistema de arquivos.
+- **Alternativas:** `train_test_split(stratify=...)` do scikit-learn (adiado: é dependência da Fase 2 e só faz duas partes por chamada); split aleatório simples (classes pequenas poderiam ficar sem exemplo no teste).
+- **Arredondamento:** val e test recebem `round(n × 0,15)` com mínimo 1; o resto vai para treino. Resultado: 4.728 / 1.016 / 1.016. A classe menor (25 imagens) fica 17/4/4.
+- **Saída:** `processed/{train,val,test}/<classe>/<md5>.<ext>`, no formato do `ImageFolder`. O nome pelo MD5 evita colisões e já corrige a extensão. `processed/splits.csv` liga cada cópia ao arquivo original.
+- **Augmentation:** nenhuma até aqui. Ela entra só no treino, na Fase 2.

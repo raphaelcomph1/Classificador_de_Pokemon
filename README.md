@@ -16,11 +16,16 @@ pytest
 ## Dados
 
 Dataset: [lantian773030/pokemonclassification](https://www.kaggle.com/datasets/lantian773030/pokemonclassification) (Kaggle).
-Os dados **não** são versionados.
+Os dados **não** são versionados. Para guardá-los fora do projeto (ex.: fora do OneDrive):
+
+```powershell
+[Environment]::SetEnvironmentVariable("POKEDEX_DATA_ROOT", "C:\caminho\para\dados", "User")
+```
 
 ```powershell
 python -m pokedex.data.download      # baixa para data/raw/
 python -m pokedex.data.check         # contagens, corrompidos, duplicatas -> docs/dados.md
+python -m pokedex.data.split         # split estratificado -> processed/{train,val,test}/
 ```
 
 ## Estrutura

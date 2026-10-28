@@ -115,9 +115,12 @@ def apply_exclusions(records: list[ImageRecord], cfg: dict) -> None:
     """Marca (sem apagar) os registros que não entram no dataset final."""
     excluded_classes = set(cfg.get("excluded_classes", []))
     labels_by_group: dict[int, set[str]] = defaultdict(set)
-    for r in records:
-        if r.ok:
-            labels_by_group[r.dup_group].add(r.label)
+    best_in_group: dict[int, ImageRecord] = {}
+    for r in sorted((r for r in records if r.ok), key=lambda r: r.path):
+        labels_by_group[r.dup_group].add(r.label)
+        best = best_in_group.get(r.dup_group)
+        if best is None or r.width * r.height > best.width * best.height:
+            best_in_group[r.dup_group] = r  # maior resolução; empate fica o 1º caminho
 
     for r in records:
         if not r.ok:
@@ -126,6 +129,8 @@ def apply_exclusions(records: list[ImageRecord], cfg: dict) -> None:
             r.excluded, r.exclude_reason = True, "classe excluída"
         elif cfg.get("drop_cross_class_duplicates") and len(labels_by_group[r.dup_group]) > 1:
             r.excluded, r.exclude_reason = True, "duplicata entre classes"
+        elif cfg.get("keep_one_per_duplicate_group") and best_in_group[r.dup_group] is not r:
+            r.excluded, r.exclude_reason = True, "duplicata (cópia extra)"
 
 
 def _popcount(x: np.ndarray) -> np.ndarray:
