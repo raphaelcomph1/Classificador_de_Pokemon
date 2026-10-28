@@ -19,11 +19,13 @@ from pathlib import Path
 
 import imagehash
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from pokedex.config import data_path, data_root, load_config, project_path
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+# Formatos aceitos, identificados pelo CONTEÚDO do arquivo (não pela extensão).
+RASTER_FORMATS = ["JPEG", "PNG", "GIF", "BMP", "WEBP"]
 
 
 @dataclass
@@ -35,12 +37,15 @@ class ImageRecord:
     extension: str
     ok: bool
     error: str = ""
+    format: str = ""
     width: int = 0
     height: int = 0
     mode: str = ""
     md5: str = ""
     phash: str = ""
     dup_group: int = -1
+    excluded: bool = False
+    exclude_reason: str = ""
 
 
 def find_dataset_root(raw_dir: Path) -> Path:
@@ -72,28 +77,55 @@ def file_md5(path: Path) -> str:
 
 
 def inspect_image(path: Path, label: str, root: Path) -> ImageRecord:
-    """Abre a imagem, valida e calcula hashes. Nunca levanta exceção."""
+    """Abre a imagem, valida e calcula hashes. Nunca levanta exceção.
+
+    O formato é detectado pelo conteúdo (bytes iniciais), então um JPEG salvo
+    como `.asp` é aceito, e um SVG (vetor, texto XML) é rejeitado.
+    """
     record = ImageRecord(
         path=path.relative_to(root).as_posix(), label=label, extension=path.suffix.lower(), ok=False
     )
-    if record.extension not in IMAGE_EXTENSIONS:
-        record.error = "extensão não suportada"
-        return record
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            with Image.open(path) as img:
+            with Image.open(path, formats=RASTER_FORMATS) as img:
                 img.verify()  # checa a estrutura do arquivo
-            with Image.open(path) as img:  # verify() invalida o objeto; reabre
+            with Image.open(path, formats=RASTER_FORMATS) as img:  # verify() invalida o objeto
                 img.load()  # decodifica de fato (pega arquivos truncados)
+                record.format = img.format or ""
                 record.width, record.height = img.size
                 record.mode = img.mode
                 record.phash = str(imagehash.phash(img.convert("RGB")))
         record.md5 = file_md5(path)
         record.ok = True
-    except Exception as exc:  # qualquer falha de leitura = arquivo corrompido
-        record.error = f"{type(exc).__name__}: {exc}"
+    except UnidentifiedImageError:
+        record.error = "não é imagem raster suportada (ex.: SVG, HTML)"
+    except Exception as exc:  # qualquer outra falha de leitura = arquivo corrompido
+        record.error = f"corrompido ({type(exc).__name__})"
     return record
+
+
+def has_wrong_extension(record: ImageRecord) -> bool:
+    """True se o conteúdo é uma imagem válida, mas a extensão não bate com o formato."""
+    expected = {"JPEG": {".jpg", ".jpeg"}}.get(record.format, {f".{record.format.lower()}"})
+    return record.ok and record.extension not in expected
+
+
+def apply_exclusions(records: list[ImageRecord], cfg: dict) -> None:
+    """Marca (sem apagar) os registros que não entram no dataset final."""
+    excluded_classes = set(cfg.get("excluded_classes", []))
+    labels_by_group: dict[int, set[str]] = defaultdict(set)
+    for r in records:
+        if r.ok:
+            labels_by_group[r.dup_group].add(r.label)
+
+    for r in records:
+        if not r.ok:
+            r.excluded, r.exclude_reason = True, "arquivo inválido"
+        elif r.label in excluded_classes:
+            r.excluded, r.exclude_reason = True, "classe excluída"
+        elif cfg.get("drop_cross_class_duplicates") and len(labels_by_group[r.dup_group]) > 1:
+            r.excluded, r.exclude_reason = True, "duplicata entre classes"
 
 
 def _popcount(x: np.ndarray) -> np.ndarray:
@@ -143,7 +175,9 @@ def build_report(records: list[ImageRecord], dataset_root: Path, cfg: dict) -> s
     """Monta o relatório em Markdown."""
     ok = [r for r in records if r.ok]
     bad = [r for r in records if not r.ok]
-    counts = Counter(r.label for r in ok)
+    kept = [r for r in records if not r.excluded]
+    recovered = [r for r in ok if has_wrong_extension(r)]
+    counts = Counter(r.label for r in kept)
     all_labels = sorted({r.label for r in records})
     values = sorted(counts.values())
     median = statistics.median(values)
@@ -176,13 +210,28 @@ def build_report(records: list[ImageRecord], dataset_root: Path, cfg: dict) -> s
         f"| Classes (pastas) | {len(all_labels)} |",
         f"| Arquivos | {len(records)} |",
         f"| Imagens válidas | {len(ok)} |",
+        f"| ↳ com extensão errada (recuperadas) | {len(recovered)} |",
         f"| Arquivos com problema | {len(bad)} |",
         f"| Cópias exatas (MD5) além da 1ª | {exact_extra} |",
         f"| Grupos de (quase) duplicatas, pHash ≤ {cfg['near_duplicate_max_distance']} | {len(dup_groups)} ({near_extra} imagens a mais) |",
         f"| Grupos com classes diferentes | {len(cross_class)} |",
         f"| Imagens com lado < {cfg['min_side_px']} px | {len(small)} |",
+        f"| **Dataset final: classes / imagens** | **{len(counts)} / {len(kept)}** |",
         "",
-        "## Desbalanceamento",
+        "## Exclusões",
+        "",
+        "Nada é apagado de `raw/`: as exclusões ficam marcadas no `manifest.csv`",
+        "(colunas `excluded` e `exclude_reason`) e as regras vêm de `configs/data.yaml`.",
+        "",
+    ]
+    reasons = Counter(r.exclude_reason for r in records if r.excluded)
+    lines += [f"- {reason}: {n}" for reason, n in reasons.most_common()] or ["Nenhuma."]
+    if cfg.get("excluded_classes"):
+        lines.append(f"- Classes excluídas: {', '.join(cfg['excluded_classes'])}")
+
+    lines += [
+        "",
+        "## Desbalanceamento (dataset final)",
         "",
         f"- Mínimo: **{counts[min_label]}** ({min_label}) · Máximo: **{counts[max_label]}** ({max_label})",
         f"- Média: {statistics.mean(values):.1f} · Mediana: {median:.0f} · Desvio padrão: {statistics.pstdev(values):.1f}",
@@ -201,9 +250,14 @@ def build_report(records: list[ImageRecord], dataset_root: Path, cfg: dict) -> s
     ]
     lines += [f"- `{r.path}` — {r.error}" for r in bad] or ["Nenhum."]
 
+    lines += ["", "## Recuperadas (conteúdo válido, extensão errada)", ""]
+    lines += [f"- `{r.path}` — na verdade é {r.format}" for r in recovered] or ["Nenhuma."]
+
     lines += ["", "## Duplicatas entre classes diferentes", ""]
     if cross_class:
-        lines.append("Possíveis erros de rótulo. Arquivos de cada grupo:")
+        lines.append(
+            "Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grupo:"
+        )
         lines.append("")
         for g in cross_class:
             lines.append("- " + ", ".join(f"`{r.path}`" for r in g))
@@ -216,14 +270,17 @@ def build_report(records: list[ImageRecord], dataset_root: Path, cfg: dict) -> s
 
     lines += [
         "",
-        "## Imagens por classe",
+        "## Imagens por classe (dataset final)",
         "",
         "<details><summary>Tabela completa</summary>",
         "",
         "| Classe | Imagens |",
         "|---|---|",
     ]
-    lines += [f"| {label} | {counts.get(label, 0)} |" for label in all_labels]
+    lines += [
+        f"| {label} | {counts[label] if label in counts else '— (excluída)'} |"
+        for label in all_labels
+    ]
     lines += ["", "</details>", ""]
     return "\n".join(lines)
 
@@ -247,6 +304,7 @@ def run_check(cfg: dict) -> tuple[list[ImageRecord], str]:
         strict=True,
     ):
         r.dup_group = group
+    apply_exclusions(records, cfg)
     return records, build_report(records, dataset_root, cfg)
 
 

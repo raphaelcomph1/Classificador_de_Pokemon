@@ -13,6 +13,13 @@ seed: 42
 # considerar duas imagens "quase duplicatas". 0 = pHash idêntico.
 near_duplicate_max_distance: 4
 
+# Exclusões (marcadas no manifesto; nada é apagado de raw/)
+# Formas regionais não são Gen 1 e competem com a forma original (ver docs/decisoes.md).
+excluded_classes:
+  - Alolan Sandslash
+# Mesma imagem em pastas diferentes (ex.: Pidgeot/Pidgeotto) = rótulo ambíguo -> remove o grupo todo.
+drop_cross_class_duplicates: true
+
 # Imagens menores que isso (em qualquer lado, em px) são sinalizadas no relatório.
 min_side_px: 32
 

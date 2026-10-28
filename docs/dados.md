@@ -9,50 +9,73 @@ Dataset: `lantian773030/pokemonclassification` — pasta `raw/PokemonData`.
 |---|---|
 | Classes (pastas) | 150 |
 | Arquivos | 6837 |
-| Imagens válidas | 6820 |
-| Arquivos com problema | 17 |
+| Imagens válidas | 6825 |
+| ↳ com extensão errada (recuperadas) | 13 |
+| Arquivos com problema | 12 |
 | Cópias exatas (MD5) além da 1ª | 12 |
 | Grupos de (quase) duplicatas, pHash ≤ 4 | 55 (55 imagens a mais) |
 | Grupos com classes diferentes | 10 |
 | Imagens com lado < 32 px | 0 |
+| **Dataset final: classes / imagens** | **149 / 6764** |
 
-## Desbalanceamento
+## Exclusões
 
-- Mínimo: **26** (Alakazam) · Máximo: **66** (Venusaur)
-- Média: 45.5 · Mediana: 46 · Desvio padrão: 6.7
-- Razão máx/mín: **2.5x**
+Nada é apagado de `raw/`: as exclusões ficam marcadas no `manifest.csv`
+(colunas `excluded` e `exclude_reason`) e as regras vêm de `configs/data.yaml`.
+
+- classe excluída: 41
+- duplicata entre classes: 20
+- arquivo inválido: 12
+- Classes excluídas: Alolan Sandslash
+
+## Desbalanceamento (dataset final)
+
+- Mínimo: **25** (Alakazam) · Máximo: **66** (Venusaur)
+- Média: 45.4 · Mediana: 46 · Desvio padrão: 6.8
+- Razão máx/mín: **2.6x**
 - Classes com menos da metade da mediana: 0
 
 ## Formatos
 
 - Extensões: {'.jpg': 6659, '.png': 121, '.jpeg': 40, '.svg': 12, ".jpg')": 1, '.sb-334870d9-fk2tvi': 1, '.sb-334870d9-nld60h': 1, '.asp': 1, '.jpg~c200': 1}
-- Modos de cor: {'RGB': 6708, 'RGBA': 107, 'L': 3, 'P': 2}
+- Modos de cor: {'RGB': 6713, 'RGBA': 107, 'L': 3, 'P': 2}
 - Largura: mín 43, mediana 354, máx 5000
 - Altura: mín 42, mediana 353, máx 4356
 
 ## Arquivos com problema
 
-- `Cloyster/ff270ebfab0f46b3b05c3fecd6a15ef9.svg` — extensão não suportada
-- `Dewgong/e3ecbb47e192470aa8686734b7813b43.svg` — extensão não suportada
-- `Ekans/b24c3fa1a8b742af9af97c58c002c85b.jpg')` — extensão não suportada
-- `Exeggutor/2b8bc491c5ca4e788999f8ea53617638.svg` — extensão não suportada
-- `Exeggutor/f29b4f9fccff4055b167ece6556143cd.svg` — extensão não suportada
-- `Golduck/bc08a691e7cb41b0bec2adf931dc9634.svg` — extensão não suportada
-- `Graveler/3fe3c6a0bbd14de89092d2c675f743c1.svg` — extensão não suportada
-- `Magneton/45e434d002bd44eeb1acbc2decc8ee0f.svg` — extensão não suportada
-- `Mewtwo/00000008.png.sb-334870d9-FK2TVI` — extensão não suportada
-- `Mewtwo/00000042.png.sb-334870d9-nlD60H` — extensão não suportada
-- `Muk/d4ddd14c1d4340a680018d0b805bd1b2.asp` — extensão não suportada
-- `Omastar/1be6e7da1bba4379b298b20013c57b4b.svg` — extensão não suportada
-- `Scyther/a8734f10941a4deb95fcf7388e4fe8e2.svg` — extensão não suportada
-- `Tentacruel/d6fb0a3046364ea2b49525c6f6b966e5.svg` — extensão não suportada
-- `Venomoth/bb5d47bced6e4e33a77faa17e1eec906.svg` — extensão não suportada
-- `Wigglytuff/4f3c72df431a49d4b3fbc84c94f2261e.jpg~c200` — extensão não suportada
-- `Zapdos/c99b2d19544c4cbbacd7711ade660279.svg` — extensão não suportada
+- `Cloyster/ff270ebfab0f46b3b05c3fecd6a15ef9.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Dewgong/e3ecbb47e192470aa8686734b7813b43.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Exeggutor/2b8bc491c5ca4e788999f8ea53617638.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Exeggutor/f29b4f9fccff4055b167ece6556143cd.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Golduck/bc08a691e7cb41b0bec2adf931dc9634.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Graveler/3fe3c6a0bbd14de89092d2c675f743c1.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Magneton/45e434d002bd44eeb1acbc2decc8ee0f.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Omastar/1be6e7da1bba4379b298b20013c57b4b.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Scyther/a8734f10941a4deb95fcf7388e4fe8e2.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Tentacruel/d6fb0a3046364ea2b49525c6f6b966e5.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Venomoth/bb5d47bced6e4e33a77faa17e1eec906.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+- `Zapdos/c99b2d19544c4cbbacd7711ade660279.svg` — não é imagem raster suportada (ex.: SVG, HTML)
+
+## Recuperadas (conteúdo válido, extensão errada)
+
+- `Bulbasaur/00000003.png` — na verdade é JPEG
+- `Bulbasaur/00000006.jpg` — na verdade é PNG
+- `Bulbasaur/00000022.png` — na verdade é JPEG
+- `Charmander/00000044.png` — na verdade é JPEG
+- `Ekans/b24c3fa1a8b742af9af97c58c002c85b.jpg')` — na verdade é JPEG
+- `Mewtwo/00000008.png.sb-334870d9-FK2TVI` — na verdade é JPEG
+- `Mewtwo/00000042.png.sb-334870d9-nlD60H` — na verdade é JPEG
+- `Muk/d4ddd14c1d4340a680018d0b805bd1b2.asp` — na verdade é JPEG
+- `Pikachu/00000009.png` — na verdade é JPEG
+- `Pikachu/00000040.png` — na verdade é JPEG
+- `Pikachu/00000055.png` — na verdade é JPEG
+- `Squirtle/00000015.png` — na verdade é JPEG
+- `Wigglytuff/4f3c72df431a49d4b3fbc84c94f2261e.jpg~c200` — na verdade é JPEG
 
 ## Duplicatas entre classes diferentes
 
-Possíveis erros de rótulo. Arquivos de cada grupo:
+Pares de evolução com a mesma imagem (rótulo ambíguo). Arquivos de cada grupo:
 
 - `Alakazam/64527ef991ff42c6883623f263f3c2f4.jpg`, `Kadabra/f02640d4ea714d91ba16fafd46b3a49b.jpg`
 - `Cubone/9d5269c2392b49b6b8f37e15ff284351.jpg`, `Marowak/f2f2769669734a28bb848108a8da09ad.jpg`
@@ -83,7 +106,7 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 - `Flareon/23f57c80ee784b63b23e4cea6cd6f454.jpg`, `Flareon/a403f06e227940019826d96deb7274b5.jpg`
 - `Grimer/1feaee12c55749608a69bc1095d2819f.jpg`, `Grimer/e489c8f2a9be405bbdd621e1b0628e4c.jpg`
 
-## Imagens por classe
+## Imagens por classe (dataset final)
 
 <details><summary>Tabela completa</summary>
 
@@ -91,8 +114,8 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 |---|---|
 | Abra | 35 |
 | Aerodactyl | 35 |
-| Alakazam | 26 |
-| Alolan Sandslash | 41 |
+| Alakazam | 25 |
+| Alolan Sandslash | — (excluída) |
 | Arbok | 41 |
 | Arcanine | 41 |
 | Articuno | 45 |
@@ -109,19 +132,19 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Clefable | 38 |
 | Clefairy | 46 |
 | Cloyster | 48 |
-| Cubone | 40 |
-| Dewgong | 43 |
+| Cubone | 39 |
+| Dewgong | 42 |
 | Diglett | 39 |
 | Ditto | 40 |
-| Dodrio | 39 |
-| Doduo | 35 |
+| Dodrio | 38 |
+| Doduo | 34 |
 | Dragonair | 42 |
 | Dragonite | 48 |
 | Dratini | 26 |
 | Drowzee | 39 |
 | Dugtrio | 51 |
 | Eevee | 37 |
-| Ekans | 35 |
+| Ekans | 36 |
 | Electabuzz | 41 |
 | Electrode | 51 |
 | Exeggcute | 46 |
@@ -138,7 +161,7 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Golduck | 46 |
 | Golem | 46 |
 | Graveler | 39 |
-| Grimer | 44 |
+| Grimer | 43 |
 | Growlithe | 44 |
 | Gyarados | 46 |
 | Haunter | 48 |
@@ -152,12 +175,12 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Jynx | 49 |
 | Kabuto | 49 |
 | Kabutops | 42 |
-| Kadabra | 49 |
+| Kadabra | 48 |
 | Kakuna | 47 |
 | Kangaskhan | 51 |
-| Kingler | 47 |
+| Kingler | 46 |
 | Koffing | 48 |
-| Krabby | 48 |
+| Krabby | 47 |
 | Lapras | 53 |
 | Lickitung | 48 |
 | Machamp | 53 |
@@ -167,12 +190,12 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Magmar | 44 |
 | Magnemite | 46 |
 | Magneton | 41 |
-| Mankey | 55 |
-| Marowak | 30 |
+| Mankey | 54 |
+| Marowak | 29 |
 | Meowth | 26 |
 | Metapod | 53 |
 | Mew | 54 |
-| Mewtwo | 52 |
+| Mewtwo | 54 |
 | Moltres | 43 |
 | MrMime | 45 |
 | Muk | 42 |
@@ -188,17 +211,17 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Paras | 47 |
 | Parasect | 43 |
 | Persian | 37 |
-| Pidgeot | 43 |
-| Pidgeotto | 40 |
+| Pidgeot | 42 |
+| Pidgeotto | 39 |
 | Pidgey | 48 |
 | Pikachu | 62 |
 | Pinsir | 41 |
 | Poliwag | 51 |
-| Poliwhirl | 50 |
-| Poliwrath | 31 |
+| Poliwhirl | 48 |
+| Poliwrath | 29 |
 | Ponyta | 45 |
 | Porygon | 46 |
-| Primeape | 51 |
+| Primeape | 50 |
 | Psyduck | 40 |
 | Raichu | 51 |
 | Rapidash | 48 |
@@ -211,7 +234,7 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Scyther | 57 |
 | Seadra | 48 |
 | Seaking | 46 |
-| Seel | 48 |
+| Seel | 47 |
 | Shellder | 46 |
 | Slowbro | 46 |
 | Slowpoke | 41 |
@@ -236,7 +259,7 @@ Possíveis erros de rótulo. Arquivos de cada grupo:
 | Weedle | 49 |
 | Weepinbell | 43 |
 | Weezing | 50 |
-| Wigglytuff | 56 |
+| Wigglytuff | 57 |
 | Zapdos | 51 |
 | Zubat | 40 |
 

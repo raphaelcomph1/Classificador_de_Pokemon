@@ -39,3 +39,24 @@ Formato: data · decisão · alternativas · por quê.
 
 - **Alternativas:** manter em `data/` dentro do projeto; colocar caminho absoluto no YAML.
 - **Por quê:** o projeto está no OneDrive, que sincronizaria milhares de imagens. Caminho absoluto no YAML quebraria no Colab. Uma variável de ambiente resolve os dois casos: localmente aponta para `C:\Users\r4fae\datasets\pokedex`, e no Colab pode apontar para o Drive. Sem a variável, o padrão continua `data/`.
+
+## 2026-10-28 · Exclusões marcadas no manifesto, não apagadas
+
+- **Alternativas:** apagar os arquivos de `raw/`; copiar só os bons para outra pasta.
+- **Por quê:** `raw/` fica idêntico ao download, então qualquer exclusão pode ser desfeita mudando `configs/data.yaml`. O `manifest.csv` registra *o quê* foi excluído e *por quê* (`exclude_reason`), o que facilita auditar depois.
+
+## 2026-10-28 · Formas regionais (Alolan Sandslash) fora do dataset
+
+- **Contexto:** o dataset tem 149 espécies da Gen 1 (faltam Nidoran♀ e Nidoran♂) + 1 forma regional, Alolan Sandslash. Por isso as fontes divergem entre 149 e 150 classes.
+- **Alternativas:** (a) classe separada; (b) juntar com Sandslash; (c) excluir.
+- **Por quê (c):** o classificador aprende **aparência**. A forma de Alola tem aparência bem diferente (gelo, azul), então juntar com o Sandslash normal (b) faria uma classe com dois visuais distintos. Mantê-la como classe própria (a) foge do escopo Gen 1 e seria a única forma regional, sem Alolan Vulpix, Raichu etc. Se um dia as formas regionais entrarem, entram todas, cada uma como classe própria (ex.: `sandslash-alola`, o mesmo nome que a PokéAPI usa).
+- **Consequência:** o modelo final tem **149 classes**. Nidoran♀/♂ ficam sem cobertura (anotar na Pokédex v1).
+
+## 2026-10-28 · Formato detectado pelo conteúdo, não pela extensão
+
+- **Por quê:** 13 imagens tinham extensão errada (ex.: JPEG salvo como `.asp` ou `.png`). O Pillow identifica o formato pelos bytes iniciais do arquivo (*magic number*). Aceito só JPEG/PNG/GIF/BMP/WEBP (`formats=`), e os SVGs (vetor) são descartados.
+- **Atenção para o split:** o `ImageFolder` do torchvision filtra por extensão. Na hora de gerar `processed/`, os arquivos devem ser salvos com a extensão correta.
+
+## 2026-10-28 · Duplicatas entre classes removidas
+
+- **Por quê:** as 10 ocorrências eram pares de evolução com a mesma imagem (provavelmente artes com os dois Pokémon). Não existe rótulo certo para elas, e mantê-las ensinaria o modelo a confundir justamente as classes mais parecidas. Foram removidas as 20 imagens.
