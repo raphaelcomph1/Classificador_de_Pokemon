@@ -1,0 +1,20 @@
+# Configuração da Fase 1 (dados)
+dataset_handle: lantian773030/pokemonclassification
+raw_dir: data/raw
+processed_dir: data/processed
+report_path: docs/dados.md
+
+seed: 42
+
+# Duplicatas: distância de Hamming máxima entre pHashes (64 bits) para
+# considerar duas imagens "quase duplicatas". 0 = pHash idêntico.
+near_duplicate_max_distance: 4
+
+# Imagens menores que isso (em qualquer lado, em px) são sinalizadas no relatório.
+min_side_px: 32
+
+# Split (usado depois, na etapa de split)
+split:
+  train: 0.70
+  val: 0.15
+  test: 0.15
