@@ -28,6 +28,18 @@ python -m pokedex.data.check         # contagens, corrompidos, duplicatas -> doc
 python -m pokedex.data.split         # split estratificado -> processed/{train,val,test}/
 ```
 
+## Treino (Fase 2)
+
+```powershell
+# dependências de ML (local: torch só CPU)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[dev,ml]"
+
+python -m pokedex.train --arch small_cnn --smoke-test        # teste rápido na CPU
+python -m pokedex.train --arch mobilenet_v3_large            # treino de verdade (Colab/GPU)
+python -m pokedex.evaluate models/mobilenet_v3_large/best.pt # métricas no teste
+python -m pokedex.predict imagem.jpg --checkpoint models/mobilenet_v3_large/best.pt
+```n
 ## Estrutura
 
 Ver `CLAUDE.md`. Decisões técnicas ficam registradas em `docs/decisoes.md`.

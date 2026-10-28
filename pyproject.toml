@@ -20,8 +20,14 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
-# Fase 2 (pesado, instalar só quando chegar lá):
-# ml = ["torch", "torchvision", "scikit-learn", "matplotlib", "seaborn"]
+# Fase 2. Localmente, instale o torch CPU antes (ver README); no Colab ele já vem instalado.
+ml = [
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

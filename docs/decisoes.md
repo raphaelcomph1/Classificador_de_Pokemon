@@ -79,3 +79,32 @@ Formato: data · decisão · alternativas · por quê.
 - **Arredondamento:** val e test recebem `round(n × 0,15)` com mínimo 1; o resto vai para treino. Resultado: 4.728 / 1.016 / 1.016. A classe menor (25 imagens) fica 17/4/4.
 - **Saída:** `processed/{train,val,test}/<classe>/<md5>.<ext>`, no formato do `ImageFolder`. O nome pelo MD5 evita colisões e já corrige a extensão. `processed/splits.csv` liga cada cópia ao arquivo original.
 - **Augmentation:** nenhuma até aqui. Ela entra só no treino, na Fase 2.
+
+## 2026-10-28 · Fase 2: PyTorch CPU localmente
+
+- **Por quê:** a versão CUDA do torch tem alguns GB e a máquina local só roda o `--smoke-test`. A versão CPU (`--index-url https://download.pytorch.org/whl/cpu`) é bem menor. No Colab o torch com CUDA já vem instalado.
+
+## 2026-10-28 · Arquiteturas: SmallCNN (baseline), MobileNetV3-Large, ResNet18, ResNet50
+
+- **Baseline do zero (`SmallCNN`, ~430 mil parâmetros):** serve de régua. Com só ~32 imagens de treino por classe, um modelo do zero deve ir mal. A diferença mostra *quanto* o pré-treino no ImageNet ajuda.
+- **MobileNetV3-Large (~5,4 M):** leve e rápido, bom para a API e o site (Fases 4 e 6). É a arquitetura padrão da config.
+- **ResNet18 (~11 M) / ResNet50 (~25 M):** arquitetura clássica e fácil de entender. A ResNet50 é mais pesada, mas costuma generalizar melhor.
+- **Comparação justa:** mesma seed, mesmo split, mesmas transforms e mesmo número de épocas.
+
+## 2026-10-28 · Treino em duas etapas
+
+- **Etapa 1 (head):** base congelada, só a cabeça nova treina, com lr 1e-3 por 5 épocas. A cabeça nova começa aleatória. Se a base estivesse descongelada, os gradientes grandes do início destruiriam as features boas do ImageNet.
+- **Etapa 2 (finetune):** descongela os 3 últimos blocos, com lr 1e-4 (10x menor) por 10 épocas. Os últimos blocos têm features mais específicas (formas, partes de objetos) e se beneficiam do ajuste. Os primeiros (bordas, texturas) servem para qualquer imagem.
+- **Seleção do modelo:** guarda o checkpoint com a melhor acurácia de **validação**. O teste só é usado no final, uma vez, para não "escolher pelo teste".
+
+## 2026-10-28 · Augmentation e pré-processamento
+
+- **Treino:** `RandomResizedCrop(224, scale 0.7–1.0)`, flip horizontal, rotação de ±10°, brilho/contraste ±20% e saturação ±10%.
+- **Sem mudança de matiz (hue):** a cor é a pista principal entre classes parecidas (Sandslash vs. Alolan Sandslash, Pokémon shiny à parte).
+- **Validação/teste:** `Resize(224×224)` + normalização do ImageNet, sem crop, para não cortar partes do Pokémon.
+- **Transparência:** PNGs transparentes são compostos sobre fundo **branco**. O `convert("RGB")` padrão deixaria o fundo preto (ou com lixo), algo que nunca aparece numa foto real.
+
+## 2026-10-28 · Loss e otimizador
+
+- **CrossEntropy com `label_smoothing=0.1`:** em vez de exigir 100% de certeza na classe correta, o alvo vira 90% + 10% espalhado. Isso reduz a confiança excessiva, o que importa porque a Pokédex vai mostrar probabilidades no top-3.
+- **AdamW, weight decay 1e-4, scheduler cosseno:** o AdamW é um bom padrão para fine-tuning e converge sem muito ajuste. O cosseno reduz o lr suavemente até o fim de cada etapa.

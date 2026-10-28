@@ -1,0 +1,33 @@
+# Configuração da Fase 2 (treino). Valores sobrescrevíveis pela linha de comando (ver train.py).
+seed: 42
+image_size: 224
+batch_size: 32
+num_workers: 0          # Windows/local: 0. No Colab: 2.
+output_dir: models
+
+model:
+  # Opções: small_cnn (baseline do zero), mobilenet_v3_large, resnet18, resnet50
+  arch: mobilenet_v3_large
+  pretrained: true      # pesos do ImageNet (ignorado em small_cnn)
+
+# Etapa 1: base congelada, treina só a cabeça nova.
+head:
+  epochs: 5
+  lr: 1.0e-3
+
+# Etapa 2: descongela as últimas camadas e treina com learning rate menor.
+finetune:
+  epochs: 10
+  lr: 1.0e-4
+  unfreeze_last: 3      # quantos blocos finais da base descongelar
+
+optimizer:
+  weight_decay: 1.0e-4
+loss:
+  label_smoothing: 0.1
+
+# --smoke-test: poucos batches, só para ver se o código roda de ponta a ponta na CPU.
+smoke_test:
+  max_batches: 2
+  epochs: 1
+  batch_size: 8
