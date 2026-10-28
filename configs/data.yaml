@@ -1,7 +1,10 @@
 # Configuração da Fase 1 (dados)
 dataset_handle: lantian773030/pokemonclassification
-raw_dir: data/raw
-processed_dir: data/processed
+# Pasta base dos dados. A variável de ambiente POKEDEX_DATA_ROOT, se existir, tem prioridade
+# (útil para guardar os dados fora do OneDrive ou apontar para o Drive no Colab).
+data_root: data
+raw_dir: raw              # relativo a data_root
+processed_dir: processed  # relativo a data_root
 report_path: docs/dados.md
 
 seed: 42

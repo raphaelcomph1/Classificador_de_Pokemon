@@ -34,3 +34,8 @@ Formato: data · decisão · alternativas · por quê.
 - **Por quê:** a mesma imagem costuma aparecer redimensionada ou recomprimida em sites diferentes, e aí o MD5 muda. O pHash (DCT da imagem reduzida) se mantém parecido nesses casos. A distância de Hamming ≤ 4 (de 64 bits) é um limiar conservador e fica em `configs/data.yaml` para ajuste depois de olhar os grupos encontrados.
 - **Agrupamento:** union-find. Se A≈B e B≈C, as três imagens ficam no mesmo grupo e vão juntas para o mesmo split, o que evita vazamento.
 - **Manifesto:** `data/processed/manifest.csv` guarda, por arquivo, a classe, se está ok, os hashes e o `dup_group`. O split vai partir desse arquivo.
+
+## 2026-10-28 · Dados fora do OneDrive (`POKEDEX_DATA_ROOT`)
+
+- **Alternativas:** manter em `data/` dentro do projeto; colocar caminho absoluto no YAML.
+- **Por quê:** o projeto está no OneDrive, que sincronizaria milhares de imagens. Caminho absoluto no YAML quebraria no Colab. Uma variável de ambiente resolve os dois casos: localmente aponta para `C:\Users\r4fae\datasets\pokedex`, e no Colab pode apontar para o Drive. Sem a variável, o padrão continua `data/`.

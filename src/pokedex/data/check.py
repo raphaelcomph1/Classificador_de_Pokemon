@@ -21,7 +21,7 @@ import imagehash
 import numpy as np
 from PIL import Image
 
-from pokedex.config import load_config, project_path
+from pokedex.config import data_path, data_root, load_config, project_path
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
 
@@ -167,7 +167,7 @@ def build_report(records: list[ImageRecord], dataset_root: Path, cfg: dict) -> s
         "# Relatório de dados",
         "",
         f"Gerado por `python -m pokedex.data.check` em {date.today().isoformat()}.",
-        f"Dataset: `{cfg['dataset_handle']}` — pasta `{dataset_root.relative_to(project_path('.')).as_posix()}`.",
+        f"Dataset: `{cfg['dataset_handle']}` — pasta `{dataset_root.relative_to(data_root(cfg)).as_posix()}`.",
         "",
         "## Resumo",
         "",
@@ -230,7 +230,7 @@ def build_report(records: list[ImageRecord], dataset_root: Path, cfg: dict) -> s
 
 def run_check(cfg: dict) -> tuple[list[ImageRecord], str]:
     """Executa toda a checagem e devolve (registros, relatório)."""
-    dataset_root = find_dataset_root(project_path(cfg["raw_dir"]))
+    dataset_root = find_dataset_root(data_path(cfg, "raw_dir"))
     files = list_files(dataset_root)
     print(f"{len(files)} arquivos em {dataset_root}")
 
@@ -254,7 +254,7 @@ def main() -> None:
     cfg = load_config("data")
     records, report = run_check(cfg)
 
-    manifest = project_path(cfg["processed_dir"]) / "manifest.csv"
+    manifest = data_path(cfg, "processed_dir") / "manifest.csv"
     write_manifest(records, manifest)
     report_path = project_path(cfg["report_path"])
     report_path.write_text(report, encoding="utf-8")

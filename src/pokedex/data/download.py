@@ -10,7 +10,7 @@ from pathlib import Path
 
 import kagglehub
 
-from pokedex.config import load_config, project_path
+from pokedex.config import data_path, load_config
 
 
 def download_dataset(handle: str, output_dir: Path, force: bool = False) -> Path:
@@ -26,7 +26,7 @@ def main() -> None:
     parser.add_argument("--force", action="store_true", help="baixar de novo mesmo se já existir")
     args = parser.parse_args()
 
-    out = download_dataset(cfg["dataset_handle"], project_path(cfg["raw_dir"]), args.force)
+    out = download_dataset(cfg["dataset_handle"], data_path(cfg, "raw_dir"), args.force)
     print(f"Dataset disponível em: {out}")
 
 
