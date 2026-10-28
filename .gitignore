@@ -8,8 +8,9 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Dados e pesos (nunca versionar)
-data/
-models/*
+# "/" no início = só a pasta da raiz (sem ela, src/pokedex/data/ também seria ignorada)
+/data/
+/models/*
 !models/.gitkeep
 *.pt
 *.pth
