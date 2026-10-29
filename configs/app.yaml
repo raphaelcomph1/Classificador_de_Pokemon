@@ -7,6 +7,13 @@ low_confidence: 0.4
 # Largura inicial da foto da câmera, em px (320 a 1920); o usuário pode mudar na tela.
 camera_width: 1280
 
+# Scanner ao vivo (mira fixa no centro do vídeo)
+scanner:
+  square_fraction: 0.6   # lado da mira = 60% do menor lado do vídeo
+  smoothing_frames: 5    # média das últimas N previsões (evita o nome piscar)
+  min_interval_s: 0.1    # no máximo ~10 previsões por segundo (poupa a CPU)
+  confident: 0.6         # a partir daqui a mira fica verde; entre low_confidence e isto, amarela
+
 pokeapi:
   base_url: https://pokeapi.co/api/v2
   cache_dir: .cache/pokeapi   # respostas salvas em disco (não versionado)

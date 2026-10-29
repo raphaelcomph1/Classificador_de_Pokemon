@@ -63,7 +63,7 @@ def test_app_shows_top3_and_card_after_upload(monkeypatch: pytest.MonkeyPatch) -
 
     assert not at.exception
     assert len(at.progress) == 3 + 6  # 3 palpites + 6 stats
-    assert len(at.radio[0].options) == 3
+    assert len(at.radio(key="chosen").options) == 3  # "Ver na Pokédex": os 3 palpites
     assert any("#025" in md.value for md in at.markdown)
     assert any("Fraco contra" in md.value for md in at.markdown)
 
@@ -87,3 +87,19 @@ def test_paste_mode_renders() -> None:
     assert not at.exception
     assert len(at.file_uploader) == 0 and len(at.camera_input) == 0
     assert at.info[0].value.startswith("Envie uma imagem")
+
+
+class _FakeWebRtcContext:
+    class state:  # noqa: N801
+        playing = False
+
+
+@pytest.mark.skipif(not HAS_MODEL, reason="modelo treinado não encontrado")
+def test_scanner_mode_renders(monkeypatch: pytest.MonkeyPatch) -> None:
+    # O componente de vídeo precisa do servidor real do Streamlit; o AppTest usa um simulado.
+    monkeypatch.setattr("streamlit_webrtc.webrtc_streamer", lambda **kwargs: _FakeWebRtcContext())
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.radio(key="mode").set_value("🎯 Scanner ao vivo").run()
+    assert not at.exception
+    assert at.select_slider(key="scanner_width").value == 1280
+    assert len(at.file_uploader) == 0 and len(at.camera_input) == 0

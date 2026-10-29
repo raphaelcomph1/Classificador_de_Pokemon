@@ -27,11 +27,18 @@ class Predictor:
         self.transform = eval_transforms(ckpt["image_size"])
 
     @torch.no_grad()
-    def predict(self, image: Image.Image | str | Path, k: int = 3) -> list[tuple[str, float]]:
-        """Top-k (classe, probabilidade), da mais provável para a menos."""
+    def probabilities(self, image: Image.Image | str | Path) -> torch.Tensor:
+        """Probabilidade de cada uma das classes (tensor 1D na CPU, soma 1)."""
         image = to_rgb(image) if isinstance(image, Image.Image) else load_rgb(image)
         batch = self.transform(image).unsqueeze(0).to(self.device)
-        probs = torch.softmax(self.model(batch), dim=1)[0]
+        return torch.softmax(self.model(batch), dim=1)[0].cpu()
+
+    def predict(self, image: Image.Image | str | Path, k: int = 3) -> list[tuple[str, float]]:
+        """Top-k (classe, probabilidade), da mais provável para a menos."""
+        return self.top_k(self.probabilities(image), k)
+
+    def top_k(self, probs: torch.Tensor, k: int = 3) -> list[tuple[str, float]]:
+        """Converte um vetor de probabilidades em top-k (classe, probabilidade)."""
         top = torch.topk(probs, k=min(k, len(self.classes)))
         return [(self.classes[i], float(p)) for p, i in zip(top.values, top.indices, strict=True)]
 

@@ -6,9 +6,11 @@ Uso:
 
 from typing import BinaryIO
 
+import av
 import streamlit as st
 from PIL import Image
 from streamlit_paste_button import paste_image_button
+from streamlit_webrtc import webrtc_streamer
 
 from pokedex.camera import CAMERA_WIDTHS, capture_preset, resize_to_width
 from pokedex.config import load_config, project_path
@@ -22,6 +24,7 @@ from pokedex.pokeapi import (
     display_name,
 )
 from pokedex.predict import Predictor
+from pokedex.scanner import LiveScanner
 
 MAX_STAT = 255  # maior valor possível de um stat base (escala das barras)
 MULTIPLIER_LABELS = {4.0: "4x", 2.0: "2x", 0.5: "½x", 0.25: "¼x", 0.0: "0x"}
@@ -145,7 +148,11 @@ def main() -> None:
         st.caption("Não reconhece Nidoran♀ e Nidoran♂ (ausentes do dataset de treino).")
 
     # Um modo por vez: só o campo escolhido aparece, então nunca há duas imagens "concorrendo".
-    mode = st.radio("Como enviar a imagem?", list(INPUT_MODES), horizontal=True, key="mode")
+    modes = [*INPUT_MODES, SCANNER_MODE]
+    mode = st.radio("Como enviar a imagem?", modes, horizontal=True, key="mode")
+    if mode == SCANNER_MODE:
+        run_scanner()
+        return
     source = INPUT_MODES[mode]()
     if source is None:
         st.info("Envie uma imagem para começar.")
@@ -189,7 +196,79 @@ def input_camera() -> Image.Image | None:
     return image
 
 
+def get_scanner() -> LiveScanner:
+    """Um scanner por sessão (cada aba do navegador tem a sua média de quadros)."""
+    if "scanner" not in st.session_state:
+        predictor = get_predictor()
+        sc = cfg["scanner"]
+        st.session_state.scanner = LiveScanner(
+            predictor.probabilities,
+            predictor.top_k,
+            display_name,
+            square_fraction=sc["square_fraction"],
+            smoothing_frames=sc["smoothing_frames"],
+            min_interval_s=sc["min_interval_s"],
+            confident=sc["confident"],
+            uncertain=cfg["low_confidence"],
+        )
+    return st.session_state.scanner
+
+
+def run_scanner() -> None:
+    """Vídeo ao vivo com mira: enquadre o Pokémon no quadrado e o nome aparece em cima."""
+    st.caption(
+        "Clique em **Iniciar**, permita a câmera e enquadre o Pokémon na mira. "
+        "🟩 verde = confiante · 🟨 amarelo = em dúvida · ⬜ cinza = procurando."
+    )
+    width = st.select_slider(
+        "Resolução do vídeo (largura)",
+        options=CAMERA_WIDTHS,
+        value=cfg["camera_width"],
+        format_func=lambda w: f"{w} px",
+        key="scanner_width",
+        help="Mais resolução deixa o vídeo mais nítido, mas pesa mais para a CPU.",
+    )
+    scanner = get_scanner()
+
+    def on_frame(frame: av.VideoFrame) -> av.VideoFrame:
+        # Roda numa thread de vídeo separada: não pode usar st.* aqui dentro.
+        out = scanner.process(frame.to_ndarray(format="rgb24"))
+        return av.VideoFrame.from_ndarray(out, format="rgb24")
+
+    ctx = webrtc_streamer(
+        key=f"scanner-{width}",  # trocar a resolução reinicia a câmera com o novo pedido
+        video_frame_callback=on_frame,
+        media_stream_constraints={"video": {"width": {"ideal": width}}, "audio": False},
+        translations=WEBRTC_PT,
+    )
+    if not ctx.state.playing:
+        scanner.smoother.clear()
+        return
+
+    if st.button("🔍 Ver na Pokédex o que está na mira", type="primary"):
+        result = scanner.result
+        if result.label is None:
+            st.info("Ainda não reconheci nada na mira. Aproxime o Pokémon e tente de novo.")
+            return
+        show_predictions(result.top)
+        st.divider()
+        try:
+            show_card(get_pokemon(result.label))
+        except Exception as exc:
+            st.error(f"Não foi possível consultar a PokéAPI agora ({type(exc).__name__}).")
+
+
+WEBRTC_PT = {
+    "start": "Iniciar",
+    "stop": "Parar",
+    "select_device": "Escolher câmera",
+    "media_api_not_available": "Câmera indisponível neste navegador",
+    "device_ask_permission": "Permita o acesso à câmera",
+    "device_not_available": "Nenhuma câmera encontrada",
+    "device_access_denied": "Acesso à câmera negado",
+}
 INPUT_MODES = {"📁 Arquivo": input_file, "📋 Colar": input_paste, "📷 Câmera": input_camera}
+SCANNER_MODE = "🎯 Scanner ao vivo"
 
 
 main()

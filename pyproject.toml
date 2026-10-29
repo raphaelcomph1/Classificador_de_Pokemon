@@ -33,6 +33,7 @@ ml = [
 app = [
     "streamlit>=1.45",  # camera_input com resolution
     "streamlit-paste-button>=0.1.2",  # botão de colar imagem
+    "streamlit-webrtc>=0.79",  # vídeo ao vivo (scanner)
 ]
 
 [tool.setuptools.packages.find]

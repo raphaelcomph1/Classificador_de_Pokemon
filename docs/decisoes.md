@@ -189,3 +189,21 @@ Os três modelos levaram ~10 min, apesar de terem tamanhos muito diferentes. O g
 - **Solução (sugerida pela documentação do Streamlit):** o usuário escolhe a largura (320, 480, 640, 800, 1024, 1280, 1600 ou 1920 px). O app pede a **menor predefinição que alcança** essa largura, assumindo 4:3, o pior caso, e depois **reduz** a foto com LANCZOS mantendo a proporção. Isso fica em `pokedex/camera.py`, com testes.
 - **Nunca amplia:** se a webcam não chega à largura pedida, a foto fica no tamanho real e a tela avisa. Ampliar só interpola pixels e não cria detalhe.
 - Padrão: 1280 px (`configs/app.yaml`). A tela mostra "capturada em A×B → usada em C×D".
+
+## 2026-10-29 · Scanner ao vivo com mira fixa
+
+- **Pedido:** um quadrado verde em tempo real em volta do Pokémon na câmera.
+- **Limitação:** o modelo é um **classificador** (diz *qual* Pokémon é, olhando a imagem inteira), não um **detector** (diz *onde* ele está). Um quadrado que segue o Pokémon exige um detector com dados de posição: fica para a Fase 7 (YOLO).
+- **Alternativas consideradas:** (A) mira fixa no centro + classificar o recorte; (B) estimar o quadrado pelo mapa de calor do classificador (Grad-CAM), que fica impreciso e treme em vídeo; (C) detector YOLO, que é a Fase 7.
+- **Escolha (A):** usa o modelo atual, sem treino novo. O usuário enquadra o Pokémon na mira (60% do menor lado do vídeo) e o nome aparece em cima. Cores: verde ≥ 60%, amarelo ≥ 40%, cinza "Procurando...".
+- **Vídeo:** `streamlit-webrtc`, porque o `st.camera_input` só tira foto. A resolução é pedida ao navegador por largura ideal (`{"width": {"ideal": N}}`), então aceita qualquer valor de 320 a 1920.
+- **Desempenho:** ~20 ms por quadro 1280×720 na CPU local (recorte + ResNet18 + desenho). O limite de 10 previsões/s (`min_interval_s: 0.1`) deixa folga, e nos quadros intermediários a mira usa o último resultado.
+- **Estabilidade:** média das probabilidades das últimas 5 previsões (`smoothing_frames`), para o nome não "piscar" entre classes parecidas.
+- **Threads:** o vídeo roda numa thread separada da interface. O resultado atual é protegido por `threading.Lock`, e o botão "Ver na Pokédex" lê o palpite da mira de forma segura.
+- **Teste sem webcam:** fotos reais do conjunto de teste coladas no centro de quadros 1280×720 e passadas pelo mesmo caminho do vídeo (`av.VideoFrame`). No `AppTest`, o componente de vídeo é substituído por um falso, porque ele precisa do servidor real do Streamlit.
+
+## 2026-10-29 · Erro de rótulo encontrado no dataset (Kingler/Krabby)
+
+- Uma imagem de teste da pasta **Kingler** tem escrito **クラブ** ("Kurabu", nome japonês do **Krabby**). O modelo previu Krabby e **acertou**; o rótulo do dataset está errado.
+- **Consequência:** pelo menos parte da "confusão nº 1" (Kingler → Krabby) é **ruído de rótulo**, não erro do modelo. Datasets montados por busca na web costumam ter esse tipo de problema.
+- **Ideia para depois:** revisar manualmente as imagens que o modelo erra com alta confiança. Elas são boas candidatas a rótulo errado (técnica conhecida como *confident learning*).
