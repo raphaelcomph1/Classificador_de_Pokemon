@@ -29,3 +29,6 @@ desktop.ini
 
 # Resultados baixados do Colab
 *.zip
+
+# Cache da PokéAPI
+.cache/

@@ -13,6 +13,7 @@ dependencies = [
     "imagehash>=4.3",
     "pyyaml>=6.0",
     "kagglehub>=1.0",  # precisa do parâmetro output_dir
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +29,8 @@ ml = [
     "matplotlib>=3.8",
     "seaborn>=0.13",
 ]
+# Fase 3: interface
+app = ["streamlit>=1.45"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

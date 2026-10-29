@@ -48,6 +48,18 @@ python -m pokedex.predict imagem.jpg --checkpoint models/mobilenet_v3_large/best
 O notebook `notebooks/train_colab.ipynb` baixa os dados, refaz o split (idêntico, por causa da seed),
 treina as arquiteturas, avalia no teste e salva os modelos no Google Drive.
 
+## Pokédex v1 (interface)
+
+Envie a foto de um Pokémon e veja os 3 palpites do modelo com probabilidade, além de número,
+tipos, stats, fraquezas e resistências vindos da [PokéAPI](https://pokeapi.co) (com cache local).
+
+```powershell
+pip install -e ".[app]"
+streamlit run app/streamlit_app.py
+```
+
+Precisa do modelo treinado em `models/resnet18/best.pt` (gerado pelo notebook do Colab).
+
 ## Resultados
 
 150 classes (Gen 1 + Alolan Sandslash), 6.760 imagens. Split estratificado 70/15/15 (seed 42).

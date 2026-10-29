@@ -161,3 +161,17 @@ Quase todas são **pares de evolução**, visualmente parecidos:
 ### Observação de desempenho
 
 Os três modelos levaram ~10 min, apesar de terem tamanhos muito diferentes. O gargalo foi **carregar e decodificar as imagens** na CPU do Colab (2 workers), não a GPU. Se precisar acelerar: mais `num_workers` ou pré-redimensionar as imagens no split.
+
+## 2026-10-29 · Fase 3: interface em Streamlit
+
+- **Alternativas:** Gradio (mais rápido para demo de ML, integração com Hugging Face Spaces) e uma página HTML própria (fica para a Fase 6).
+- **Por quê Streamlit:** mais controle de layout para um "cartão de Pokédex" (colunas, barras de stats, selos de tipo coloridos), tudo em Python. O modelo fica em `st.cache_resource` (carregado uma vez só) e as respostas da PokéAPI em `st.cache_data`.
+- **Testes sem navegador:** o `AppTest` do Streamlit roda o app e simula o upload. A PokéAPI é substituída por uma versão de mentira (`monkeypatch`), então o teste não depende de internet.
+
+## 2026-10-29 · PokéAPI: cache em disco e mapeamento de nomes
+
+- **Cache:** cada resposta é salva como JSON em `.cache/pokeapi/` (não versionado). Os dados de Pokémon não mudam, então o cache não expira. Isso deixa a interface rápida e respeita a API pública, que é gratuita e pede uso moderado.
+- **Nomes:** a classe do dataset nem sempre é o nome da API: `MrMime` → `mr-mime` e `Alolan Sandslash` → `sandslash-alola`. As 150 classes foram conferidas contra a API real.
+- **Número da Pokédex:** vem da **espécie**, não do id do Pokémon. Na API, o Alolan Sandslash tem id 10102 (id de *forma*), mas é a espécie #028.
+- **Fraquezas:** calculadas multiplicando as relações de dano de cada tipo (ex.: Charizard, Fogo/Voador, recebe 2 × 2 = 4x de Pedra; Voador anula Terra → 0x). A tabela de tipos é a **atual** (com o tipo Fada), não a da Gen 1 original.
+- **Limiar de "não tenho certeza" (40%):** com `label_smoothing=0.1`, o modelo raramente passa de ~95% de confiança, e acertos corretos às vezes ficam em 55–65% (ex.: Alolan Sandslash 58%, Charizard 64%). Um limiar de 50% assustaria o usuário à toa.

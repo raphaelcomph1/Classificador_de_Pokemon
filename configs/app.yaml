@@ -1,0 +1,11 @@
+# Configuração da Fase 3 (interface)
+checkpoint: models/resnet18/best.pt
+top_k: 3
+# Abaixo disso a interface avisa que o palpite é incerto (probabilidade do 1º lugar).
+# Com label smoothing as probabilidades ficam mais "modestas", então 0.4 já indica boa confiança.
+low_confidence: 0.4
+
+pokeapi:
+  base_url: https://pokeapi.co/api/v2
+  cache_dir: .cache/pokeapi   # respostas salvas em disco (não versionado)
+  timeout_s: 10
