@@ -4,8 +4,8 @@ top_k: 3
 # Abaixo disso a interface avisa que o palpite é incerto (probabilidade do 1º lugar).
 # Com label smoothing as probabilidades ficam mais "modestas", então 0.4 já indica boa confiança.
 low_confidence: 0.4
-# Resolução inicial da câmera (480p, 720p ou 1080p); o usuário pode mudar na tela.
-camera_resolution: 720p
+# Largura inicial da foto da câmera, em px (320 a 1920); o usuário pode mudar na tela.
+camera_width: 1280
 
 pokeapi:
   base_url: https://pokeapi.co/api/v2

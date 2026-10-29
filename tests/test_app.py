@@ -73,8 +73,9 @@ def test_camera_mode_has_resolution_selector() -> None:
     at = AppTest.from_file(APP, default_timeout=60).run()
     at.radio(key="mode").set_value("📷 Câmera").run()
     assert not at.exception
-    assert at.selectbox[0].options == ["480p", "720p", "1080p"]
-    assert at.selectbox[0].value == "720p"
+    slider = at.select_slider[0]
+    assert slider.options[0] == "320 px" and slider.options[-1] == "1920 px"
+    assert slider.value == 1280
     assert len(at.camera_input) == 1
     assert len(at.file_uploader) == 0  # só o campo do modo escolhido aparece
 

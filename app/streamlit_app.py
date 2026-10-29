@@ -10,6 +10,7 @@ import streamlit as st
 from PIL import Image
 from streamlit_paste_button import paste_image_button
 
+from pokedex.camera import CAMERA_WIDTHS, capture_preset, resize_to_width
 from pokedex.config import load_config, project_path
 from pokedex.data.datasets import load_rgb, to_rgb
 from pokedex.pokeapi import (
@@ -166,18 +167,28 @@ def input_paste() -> Image.Image | None:
     return pasted.image_data
 
 
-def input_camera() -> BinaryIO | None:
-    resolution = st.selectbox(
-        "Resolução da câmera",
-        CAMERA_RESOLUTIONS,
-        index=CAMERA_RESOLUTIONS.index(cfg["camera_resolution"]),
+def input_camera() -> Image.Image | None:
+    width = st.select_slider(
+        "Resolução da foto (largura)",
+        options=CAMERA_WIDTHS,
+        value=cfg["camera_width"],
+        format_func=lambda w: f"{w} px",
         help="Mais resolução = foto mais nítida, mas arquivo maior. "
-        "O modelo reduz tudo para 224×224, então 720p já é suficiente.",
+        "O modelo reduz tudo para 224×224 na hora de analisar.",
     )
-    return st.camera_input("Tire uma foto", resolution=resolution)
+    photo = st.camera_input("Tire uma foto", resolution=capture_preset(width))
+    if photo is None:
+        return None
+    captured = load_rgb(photo)
+    image = resize_to_width(captured, width)
+    note = "" if captured.width >= width else " (a câmera não alcança a largura escolhida)"
+    st.caption(
+        f"Capturada em {captured.width}×{captured.height} → usada em "
+        f"{image.width}×{image.height}{note}"
+    )
+    return image
 
 
-CAMERA_RESOLUTIONS = ["480p", "720p", "1080p"]
 INPUT_MODES = {"📁 Arquivo": input_file, "📋 Colar": input_paste, "📷 Câmera": input_camera}
 
 

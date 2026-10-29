@@ -182,3 +182,10 @@ Os três modelos levaram ~10 min, apesar de terem tamanhos muito diferentes. O g
 - **Modos em vez de abas:** com 3 fontes de imagem, as abas deixavam várias entradas ativas ao mesmo tempo (qual vale?). Um seletor mostra só o campo do modo escolhido.
 - **Transparência:** imagens coladas costumam ser PNG com fundo transparente. A conversão foi separada em `to_rgb()` e é usada tanto no treino quanto na previsão, então o fundo vira **branco** nos dois casos. Antes, imagens já abertas pelo PIL viravam fundo preto no `Predictor`.
 - **Resolução da câmera:** o `st.camera_input(resolution=...)` aceita 480p, 720p e 1080p, e o padrão ficou em 720p (`configs/app.yaml`). Ressalva: o modelo reduz tudo para 224×224, então resolução maior ajuda pouco na acurácia. O ganho real é poder enquadrar o Pokémon com mais nitidez quando ele está pequeno na cena.
+
+## 2026-10-29 · Câmera: qualquer largura de 320 a 1920 px
+
+- **Limitação:** o `st.camera_input` só aceita 3 predefinições (`Literal["480p", "720p", "1080p"]`), e a câmera em si só oferece um conjunto fixo de resoluções.
+- **Solução (sugerida pela documentação do Streamlit):** o usuário escolhe a largura (320, 480, 640, 800, 1024, 1280, 1600 ou 1920 px). O app pede a **menor predefinição que alcança** essa largura, assumindo 4:3, o pior caso, e depois **reduz** a foto com LANCZOS mantendo a proporção. Isso fica em `pokedex/camera.py`, com testes.
+- **Nunca amplia:** se a webcam não chega à largura pedida, a foto fica no tamanho real e a tela avisa. Ampliar só interpola pixels e não cria detalhe.
+- Padrão: 1280 px (`configs/app.yaml`). A tela mostra "capturada em A×B → usada em C×D".
