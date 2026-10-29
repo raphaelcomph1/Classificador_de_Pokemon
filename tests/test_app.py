@@ -102,4 +102,5 @@ def test_scanner_mode_renders(monkeypatch: pytest.MonkeyPatch) -> None:
     at.radio(key="mode").set_value("🎯 Scanner ao vivo").run()
     assert not at.exception
     assert at.select_slider(key="scanner_width").value == 1280
+    assert len(at.radio(key="aim").options) == 2  # mira dinâmica e fixa
     assert len(at.file_uploader) == 0 and len(at.camera_input) == 0

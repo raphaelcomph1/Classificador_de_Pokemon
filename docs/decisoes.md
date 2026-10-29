@@ -207,3 +207,42 @@ Os três modelos levaram ~10 min, apesar de terem tamanhos muito diferentes. O g
 - Uma imagem de teste da pasta **Kingler** tem escrito **クラブ** ("Kurabu", nome japonês do **Krabby**). O modelo previu Krabby e **acertou**; o rótulo do dataset está errado.
 - **Consequência:** pelo menos parte da "confusão nº 1" (Kingler → Krabby) é **ruído de rótulo**, não erro do modelo. Datasets montados por busca na web costumam ter esse tipo de problema.
 - **Ideia para depois:** revisar manualmente as imagens que o modelo erra com alta confiança. Elas são boas candidatas a rótulo errado (técnica conhecida como *confident learning*).
+
+## 2026-10-29 · Scanner com mira dinâmica (YOLO-World + classificador)
+
+**Ideia:** separar em duas etapas. O detector **localiza** ("tem algo aqui") e o nosso classificador **identifica** ("é o Pikachu") no recorte de cada região. Assim não foi preciso treinar nada novo.
+
+**Teste de viabilidade** (150 fotos de teste coladas em quadros 1280×720 com fundos variados + 51 quadros vazios; resultado por quadro):
+
+| Configuração | Identificou certo | Alarme falso | Tempo |
+|---|---|---|---|
+| YOLO-World s, texto "pokemon" | 1–3% | 0% | 78 ms |
+| YOLO-World s, 10 descrições genéricas | 55% | 14% | 78 ms |
+| YOLO-World **m**, descrições genéricas | 46% | 33% | 188 ms |
+| **s + genéricas + classificador ≥ 40%** | **72%** | **2%** | 125 ms |
+
+- **O detector praticamente não conhece a palavra "pokemon".** Descrições genéricas ("creature", "monster", "cartoon", "illustration", "toy"…) funcionam bem melhor.
+- **O modelo maior (m) foi pior** e 2,4x mais lento. Maior nem sempre é melhor fora do domínio de treino.
+- **O classificador como "segundo filtro"** foi o que viabilizou a ideia: o detector propõe até 3 regiões (com limiar baixo, 0,02) e só vira quadrado a região em que a ResNet18 tem ≥ 40% de confiança. Os alarmes falsos caíram de 14% para 2%.
+
+**Vídeo simulado** (Pokémon se movendo por 3 s a 30 fps, scanner em tempo real, 12 Pokémon):
+
+| Movimento | Suavização 0,5 | **Suavização 0,25** | 0,25 + detector 480 px |
+|---|---|---|---|
+| Rápido (atravessa a tela em 3 s) | 39% | **55%** | 65% |
+| Realista (~1/3 da tela) | 93% | **91%** | 84% |
+
+(% dos quadros com o quadrado no lugar **e** o nome certo; o nome sozinho fica certo em ~90–95%.)
+
+- **O gargalo é o atraso, não o reconhecimento:** cada análise leva ~150 ms, e a suavização da posição soma mais atraso. Com movimento rápido, o quadrado fica para trás.
+- **Escolha: suavização 0,25 e detector em 640 px.** Melhora muito o movimento rápido e quase não muda o realista. Com 480 px o detector fica mais rápido, mas perde Pokémon.
+
+**Decisões de implementação:**
+- **Análise em segundo plano** (thread): o vídeo não espera o detector, e o desenho usa o último resultado pronto.
+- **Quadrado "segura" 0,6 s** depois de perder o Pokémon, para não piscar a cada análise que falha.
+- **Vocabulário embutido:** `python -m pokedex.detector` salva o detector com as descrições já processadas (`models/yolo/pokedex-world-s.pt`, 25 MB). Assim o app **não precisa do CLIP** (codificador de texto de 338 MB), que só é usado nessa exportação.
+- **Mira fixa continua disponível** (mais leve para a CPU e funciona sem o detector).
+- **Trava (`Lock`) no detector:** o preditor do `ultralytics` não é seguro para chamadas simultâneas (ex.: duas abas).
+- **Licença:** o `ultralytics` é AGPL-3.0. Num repositório público e aberto não há problema; num uso comercial fechado, seria preciso rever.
+- **Atenção:** a configuração global do `ultralytics` (`%APPDATA%\Ultralytics\settings.json`) aponta `weights_dir` para outro projeto, então o CLIP foi salvo lá. Não alterei, para não afetar o outro projeto.
+- **Próximo nível (Fase 7):** um YOLO treinado especificamente para Pokémon deve localizar melhor que descrições genéricas.

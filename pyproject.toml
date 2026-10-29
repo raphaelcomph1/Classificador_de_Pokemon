@@ -35,6 +35,8 @@ app = [
     "streamlit-paste-button>=0.1.2",  # botão de colar imagem
     "streamlit-webrtc>=0.79",  # vídeo ao vivo (scanner)
 ]
+# Mira dinâmica do scanner (YOLO-World). Licença AGPL-3.0.
+detector = ["ultralytics>=8.3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

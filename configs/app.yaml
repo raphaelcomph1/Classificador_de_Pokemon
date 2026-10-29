@@ -13,6 +13,18 @@ scanner:
   smoothing_frames: 5    # média das últimas N previsões (evita o nome piscar)
   min_interval_s: 0.1    # no máximo ~10 previsões por segundo (poupa a CPU)
   confident: 0.6         # a partir daqui a mira fica verde; entre low_confidence e isto, amarela
+  # Mira dinâmica: o detector propõe regiões e o classificador confirma (>= low_confidence).
+  crop_margin: 0.1       # recorta 10% além da caixa do detector (caixas costumam ser justas)
+  box_smoothing: 0.25    # peso da posição anterior (0 = sem suavizar; perto de 1 = lento)
+  hold_s: 0.6            # segundos que o quadrado fica na tela depois de perder o Pokémon
+  detector:
+    weights: models/yolo/pokedex-world-s.pt       # gerado por: python -m pokedex.detector
+    base_weights: models/yolo/yolov8s-worldv2.pt  # YOLO-World original (baixado na exportação)
+    # Descrições genéricas funcionaram melhor que só "pokemon" no teste de viabilidade.
+    prompts: [creature, monster, animal, cartoon, character, illustration, drawing, toy, figure, pokemon]
+    conf: 0.02           # baixo de propósito: quem filtra de verdade é o classificador
+    imgsz: 640
+    max_candidates: 3    # quantas regiões o classificador confere por análise
 
 pokeapi:
   base_url: https://pokeapi.co/api/v2

@@ -15,6 +15,7 @@ from streamlit_webrtc import webrtc_streamer
 from pokedex.camera import CAMERA_WIDTHS, capture_preset, resize_to_width
 from pokedex.config import load_config, project_path
 from pokedex.data.datasets import load_rgb, to_rgb
+from pokedex.detector import PokemonLocator
 from pokedex.pokeapi import (
     STAT_NAMES,
     TYPE_COLORS,
@@ -196,29 +197,64 @@ def input_camera() -> Image.Image | None:
     return image
 
 
-def get_scanner() -> LiveScanner:
-    """Um scanner por sessão (cada aba do navegador tem a sua média de quadros)."""
-    if "scanner" not in st.session_state:
+@st.cache_resource(show_spinner="Carregando o detector...")
+def get_locator() -> PokemonLocator:
+    det = cfg["scanner"]["detector"]
+    return PokemonLocator(
+        project_path(det["weights"]), det["conf"], det["imgsz"], det["max_candidates"]
+    )
+
+
+def get_scanner(dynamic: bool) -> LiveScanner:
+    """Um scanner por sessão e por tipo de mira (cada aba tem a sua média de quadros)."""
+    key = f"scanner_{'dynamic' if dynamic else 'fixed'}"
+    if key not in st.session_state:
         predictor = get_predictor()
         sc = cfg["scanner"]
-        st.session_state.scanner = LiveScanner(
+        st.session_state[key] = LiveScanner(
             predictor.probabilities,
             predictor.top_k,
             display_name,
+            locate=get_locator().candidates if dynamic else None,
             square_fraction=sc["square_fraction"],
             smoothing_frames=sc["smoothing_frames"],
             min_interval_s=sc["min_interval_s"],
             confident=sc["confident"],
             uncertain=cfg["low_confidence"],
+            crop_margin=sc["crop_margin"],
+            box_smoothing=sc["box_smoothing"],
+            hold_s=sc["hold_s"],
+            background=True,
         )
-    return st.session_state.scanner
+    return st.session_state[key]
 
 
 def run_scanner() -> None:
-    """Vídeo ao vivo com mira: enquadre o Pokémon no quadrado e o nome aparece em cima."""
+    """Vídeo ao vivo: o quadrado procura o Pokémon (ou fica fixo) e o nome aparece em cima."""
+    has_detector = project_path(cfg["scanner"]["detector"]["weights"]).exists()
+    aim = st.radio(
+        "Mira",
+        [AIM_DYNAMIC, AIM_FIXED],
+        horizontal=True,
+        key="aim",
+        help="Dinâmica: o scanner procura o Pokémon na imagem e o quadrado o acompanha. "
+        "Fixa: enquadre o Pokémon no quadrado do centro (mais leve para a CPU).",
+    )
+    dynamic = aim == AIM_DYNAMIC
+    if dynamic and not has_detector:
+        st.warning(
+            "Detector não encontrado. Rode `python -m pokedex.detector` uma vez para prepará-lo. "
+            "Usando a mira fixa por enquanto."
+        )
+        dynamic = False
     st.caption(
-        "Clique em **Iniciar**, permita a câmera e enquadre o Pokémon na mira. "
-        "🟩 verde = confiante · 🟨 amarelo = em dúvida · ⬜ cinza = procurando."
+        "Clique em **Iniciar** e permita a câmera. "
+        + (
+            "O quadrado aparece sozinho em volta do Pokémon. "
+            if dynamic
+            else "Enquadre o Pokémon na mira. "
+        )
+        + "🟩 verde = confiante · 🟨 amarelo = em dúvida · ⬜ cinza = procurando."
     )
     width = st.select_slider(
         "Resolução do vídeo (largura)",
@@ -228,7 +264,7 @@ def run_scanner() -> None:
         key="scanner_width",
         help="Mais resolução deixa o vídeo mais nítido, mas pesa mais para a CPU.",
     )
-    scanner = get_scanner()
+    scanner = get_scanner(dynamic)
 
     def on_frame(frame: av.VideoFrame) -> av.VideoFrame:
         # Roda numa thread de vídeo separada: não pode usar st.* aqui dentro.
@@ -236,19 +272,20 @@ def run_scanner() -> None:
         return av.VideoFrame.from_ndarray(out, format="rgb24")
 
     ctx = webrtc_streamer(
-        key=f"scanner-{width}",  # trocar a resolução reinicia a câmera com o novo pedido
+        # trocar a resolução ou a mira reinicia a câmera com a configuração nova
+        key=f"scanner-{width}-{'dyn' if dynamic else 'fix'}",
         video_frame_callback=on_frame,
         media_stream_constraints={"video": {"width": {"ideal": width}}, "audio": False},
         translations=WEBRTC_PT,
     )
     if not ctx.state.playing:
-        scanner.smoother.clear()
+        scanner.reset()
         return
 
-    if st.button("🔍 Ver na Pokédex o que está na mira", type="primary"):
+    if st.button("🔍 Ver na Pokédex o que o scanner encontrou", type="primary"):
         result = scanner.result
         if result.label is None:
-            st.info("Ainda não reconheci nada na mira. Aproxime o Pokémon e tente de novo.")
+            st.info("Ainda não reconheci nenhum Pokémon. Aproxime-o da câmera e tente de novo.")
             return
         show_predictions(result.top)
         st.divider()
@@ -269,6 +306,8 @@ WEBRTC_PT = {
 }
 INPUT_MODES = {"📁 Arquivo": input_file, "📋 Colar": input_paste, "📷 Câmera": input_camera}
 SCANNER_MODE = "🎯 Scanner ao vivo"
+AIM_DYNAMIC = "🔎 Dinâmica (procura o Pokémon)"
+AIM_FIXED = "⬜ Fixa no centro"
 
 
 main()

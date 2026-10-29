@@ -60,6 +60,16 @@ streamlit run app/streamlit_app.py
 
 Precisa do modelo treinado em `models/resnet18/best.pt` (gerado pelo notebook do Colab).
 
+Formas de enviar a imagem: arquivo, colar da área de transferência, foto pela câmera ou
+**scanner ao vivo**, em que um quadrado acompanha o Pokémon no vídeo e mostra quem é.
+A mira dinâmica do scanner usa o YOLO-World para localizar e o classificador para identificar.
+Para prepará-la, uma vez só:
+
+```powershell
+pip install -e ".[detector]"
+python -m pokedex.detector   # gera models/yolo/pokedex-world-s.pt
+```
+
 ## Resultados
 
 150 classes (Gen 1 + Alolan Sandslash), 6.760 imagens. Split estratificado 70/15/15 (seed 42).
