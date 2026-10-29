@@ -121,3 +121,43 @@ Formato: data · decisão · alternativas · por quê.
 - **Correção:** na ResNet, contar os blocos residuais de dentro dos layers (8 na ResNet18, 16 na ResNet50).
 - **Por que ainda é muito (86% / 64% / 72%):** os parâmetros se concentram no fim da rede, onde há mais canais. É normal, e com lr 10x menor o ajuste continua delicado.
 - **Ponto para estudar depois:** com a base congelada, o BatchNorm em `model.train()` ainda atualiza as estatísticas (média/variância) dos batches. Algumas receitas deixam o BN congelado em `eval()`. Vale testar se a acurácia mudar muito.
+
+## 2026-10-29 · Resultados da Fase 2 (Colab, GPU T4, seed 42)
+
+Mesmo split (4.728 / 1.016 / 1.016), mesmas transforms e 15 épocas para todos (5 de cabeça + 10 de fine-tuning; o baseline faz 15 épocas numa etapa só). Métricas no **teste**, medidas uma única vez, com o checkpoint de melhor validação.
+
+| Modelo | Parâmetros | Melhor val | Teste acc | Teste top-3 | F1 macro | Classes F1 = 1,0 | Tempo |
+|---|---|---|---|---|---|---|---|
+| SmallCNN (do zero) | 0,4 M | 35,7% | 35,6% | 59,8% | 0,323 | 0 | 10 min |
+| MobileNetV3-Large | 4,4 M | 89,3% | 88,5% | 96,8% | 0,881 | 33 | 10 min |
+| **ResNet18** | 11,3 M | **93,5%** | **92,9%** | **98,0%** | **0,926** | 62 | 10 min |
+
+**Escolha: ResNet18** como modelo da Pokédex (Fases 3 e 4). Foi a melhor em todas as métricas, com 4,4 pontos a mais que a MobileNet. A margem de erro do teste (n = 1.016) é de cerca de ±1,6 ponto (IC 95%), então a diferença é real. O tamanho (~45 MB) e a velocidade na CPU continuam adequados para uma API.
+
+### O que os números ensinam
+
+- **Transfer learning faz toda a diferença:** de 35,6% (do zero) para 92,9%, com os mesmos dados. Com ~32 imagens por classe, aprender a "enxergar" do zero não dá certo.
+- **O baseline está subtreinado, não sobreajustado:** treino e validação sobem juntos (36% x 35%) e ainda crescendo na época 15. Mais épocas ajudariam, mas não chegariam perto do pré-treinado.
+- **O fine-tuning vale a pena:** na ResNet18, a validação saltou de 74,4% para 89,1% **numa única época** depois de descongelar os últimos blocos (93,5% no final). Na MobileNet, o ganho foi de 79,6% para 89,3%.
+- **Por que a MobileNet foi melhor na etapa 1 e pior no final:** a cabeça dela é o `classifier` inteiro (1,4 M parâmetros treináveis), enquanto a da ResNet é uma única `Linear` (77 mil). Com a base congelada, a MobileNet tinha mais capacidade para aprender. No fine-tuning, a base maior da ResNet se adaptou melhor.
+- **Sobreajuste moderado:** o treino chega a ~99,8% e a validação estabiliza em ~93%. A diferença (~7 pontos) mostra que o modelo decora parte do treino. Próximos passos possíveis: augmentation mais forte, mais dados, mais dropout na cabeça.
+- **Top-3 de 98%:** mesmo quando erra o 1º palpite, a resposta certa quase sempre está entre os 3 que a Pokédex vai mostrar.
+
+### Classes mais confundidas (ResNet18, teste)
+
+Quase todas são **pares de evolução**, visualmente parecidos:
+
+| Verdadeiro → Previsto | Erros |
+|---|---|
+| Kingler → Krabby | 3 |
+| Krabby → Kingler | 2 |
+| Poliwrath → Poliwhirl | 2 |
+| Muk → Grimer | 2 |
+| Clefairy → Clefable, Ivysaur → Venusaur | 1 cada |
+
+- **Piores F1:** Kingler 0,50 · Krabby 0,57 · Clefairy 0,67 · Poliwrath 0,67 · Muk 0,73. Com só 4 a 10 imagens de teste por classe, o F1 de uma classe isolada oscila muito (1 erro muda bastante o valor). Faz mais sentido olhar o padrão (evoluções) do que um número específico.
+- **Sandslash x Alolan Sandslash:** F1 de 0,92 nas duas. O modelo separa bem as formas regionais, o que confirma a decisão de mantê-las como classes próprias.
+
+### Observação de desempenho
+
+Os três modelos levaram ~10 min, apesar de terem tamanhos muito diferentes. O gargalo foi **carregar e decodificar as imagens** na CPU do Colab (2 workers), não a GPU. Se precisar acelerar: mais `num_workers` ou pré-redimensionar as imagens no split.

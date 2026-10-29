@@ -48,6 +48,20 @@ python -m pokedex.predict imagem.jpg --checkpoint models/mobilenet_v3_large/best
 O notebook `notebooks/train_colab.ipynb` baixa os dados, refaz o split (idêntico, por causa da seed),
 treina as arquiteturas, avalia no teste e salva os modelos no Google Drive.
 
+## Resultados
+
+150 classes (Gen 1 + Alolan Sandslash), 6.760 imagens. Split estratificado 70/15/15 (seed 42).
+Métricas no conjunto de teste (1.016 imagens):
+
+| Modelo | Acurácia | Top-3 | F1 macro |
+|---|---|---|---|
+| CNN simples (treinada do zero) | 35,6% | 59,8% | 0,32 |
+| MobileNetV3-Large (transfer learning) | 88,5% | 96,8% | 0,88 |
+| **ResNet18 (transfer learning)** | **92,9%** | **98,0%** | **0,93** |
+
+Os erros restantes se concentram em pares de evolução visualmente parecidos (Krabby/Kingler,
+Poliwhirl/Poliwrath, Grimer/Muk). Análise completa em `docs/decisoes.md`.
+
 ## Documentação
 
 - `docs/dados.md`: relatório do dataset (contagens, desbalanceamento, duplicatas, split).
