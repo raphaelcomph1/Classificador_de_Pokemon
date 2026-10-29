@@ -41,6 +41,13 @@ python -m pokedex.evaluate models/mobilenet_v3_large/best.pt # métricas no test
 python -m pokedex.predict imagem.jpg --checkpoint models/mobilenet_v3_large/best.pt
 ```
 
+### Treino na GPU (Google Colab)
+
+[![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/raphaelcomph1/Classificador_de_Pok-mon/blob/main/notebooks/train_colab.ipynb)
+
+O notebook `notebooks/train_colab.ipynb` baixa os dados, refaz o split (idêntico, por causa da seed),
+treina as arquiteturas, avalia no teste e salva os modelos no Google Drive.
+
 ## Documentação
 
 - `docs/dados.md`: relatório do dataset (contagens, desbalanceamento, duplicatas, split).

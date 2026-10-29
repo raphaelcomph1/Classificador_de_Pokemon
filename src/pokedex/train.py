@@ -163,6 +163,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--arch", choices=ARCHS, help="sobrescreve model.arch da config")
     parser.add_argument("--smoke-test", action="store_true", help="poucos batches, 1 época")
     parser.add_argument("--num-workers", type=int, help="sobrescreve num_workers da config")
+    parser.add_argument("--output-dir", help="sobrescreve output_dir (ex.: pasta no Google Drive)")
     return parser.parse_args()
 
 
@@ -181,7 +182,7 @@ def main() -> None:
     set_seed(cfg["seed"])
     device = get_device()
     run_name = f"smoke_{arch}" if args.smoke_test else arch
-    out_dir = project_path(cfg["output_dir"]) / run_name
+    out_dir = project_path(args.output_dir or cfg["output_dir"]) / run_name
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"arch={arch} device={device} seed={cfg['seed']} saída={out_dir}")
 
