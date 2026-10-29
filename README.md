@@ -40,10 +40,3 @@ python -m pokedex.train --arch mobilenet_v3_large            # treino de verdade
 python -m pokedex.evaluate models/mobilenet_v3_large/best.pt # métricas no teste
 python -m pokedex.predict imagem.jpg --checkpoint models/mobilenet_v3_large/best.pt
 ```n
-## Estrutura
-
-Ver `CLAUDE.md`. Decisões técnicas ficam registradas em `docs/decisoes.md`.
-
-## Aviso
-
-As imagens do dataset vêm de busca na web e podem ter direitos autorais; elas não são redistribuídas aqui.
