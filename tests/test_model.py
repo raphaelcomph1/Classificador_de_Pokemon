@@ -1,6 +1,5 @@
 import pytest
 import torch
-from conftest import todo
 
 from pokedex.models.build import (
     PRETRAINED_ARCHS,
@@ -26,14 +25,12 @@ def test_build_model_rejects_unknown_arch() -> None:
         build_model("vgg_qualquer", NUM_CLASSES, pretrained=False)
 
 
-@todo
 @pytest.mark.parametrize("arch", PRETRAINED_ARCHS)
 def test_replace_head_outputs_num_classes(arch: str) -> None:
     model = build_model(arch, NUM_CLASSES, pretrained=False).eval()
     assert model(x).shape == (2, NUM_CLASSES)
 
 
-@todo
 @pytest.mark.parametrize("arch", PRETRAINED_ARCHS)
 def test_replace_head_keeps_backbone(arch: str) -> None:
     """Só a cabeça muda: o resto do modelo tem os mesmos parâmetros do original."""
@@ -44,7 +41,6 @@ def test_replace_head_keeps_backbone(arch: str) -> None:
     assert count_trainable(model)[1] - n_head == count_trainable(original)[1] - n_head_original
 
 
-@todo
 @pytest.mark.parametrize("arch", PRETRAINED_ARCHS)
 def test_freeze_backbone_leaves_only_head_trainable(arch: str) -> None:
     model = build_model(arch, NUM_CLASSES, pretrained=False)
@@ -53,7 +49,6 @@ def test_freeze_backbone_leaves_only_head_trainable(arch: str) -> None:
     assert trainable == {id(p) for p in head_parameters(model, arch)}
 
 
-@todo
 @pytest.mark.parametrize("arch", PRETRAINED_ARCHS)
 def test_unfreeze_last_blocks_adds_more_params(arch: str) -> None:
     model = build_model(arch, NUM_CLASSES, pretrained=False)

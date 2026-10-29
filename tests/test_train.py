@@ -2,7 +2,6 @@ import copy
 from pathlib import Path
 
 import torch
-from conftest import todo
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -23,7 +22,6 @@ def _params(model: nn.Module) -> list[torch.Tensor]:
     return [p.detach().clone() for p in model.parameters()]
 
 
-@todo
 def test_train_one_epoch_updates_weights() -> None:
     torch.manual_seed(0)
     model = SmallCNN(4)
@@ -34,7 +32,6 @@ def test_train_one_epoch_updates_weights() -> None:
     assert any(not torch.equal(a, b) for a, b in zip(before, _params(model), strict=True))
 
 
-@todo
 def test_evaluate_epoch_does_not_change_model() -> None:
     torch.manual_seed(0)
     model = SmallCNN(4)
@@ -45,7 +42,6 @@ def test_evaluate_epoch_does_not_change_model() -> None:
         assert torch.equal(value, model_before[key]), f"{key} mudou durante a avaliação"
 
 
-@todo
 def test_can_overfit_tiny_dataset() -> None:
     """Teste clássico de sanidade: um modelo correto decora 16 exemplos rapidamente.
 
@@ -61,7 +57,6 @@ def test_can_overfit_tiny_dataset() -> None:
     assert acc == 1.0
 
 
-@todo
 def test_run_stage_returns_history_and_saves_best(tmp_path: Path) -> None:
     torch.manual_seed(0)
     model = SmallCNN(4)

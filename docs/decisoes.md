@@ -108,3 +108,15 @@ Formato: data · decisão · alternativas · por quê.
 
 - **CrossEntropy com `label_smoothing=0.1`:** em vez de exigir 100% de certeza na classe correta, o alvo vira 90% + 10% espalhado. Isso reduz a confiança excessiva, o que importa porque a Pokédex vai mostrar probabilidades no top-3.
 - **AdamW, weight decay 1e-4, scheduler cosseno:** o AdamW é um bom padrão para fine-tuning e converge sem muito ajuste. O cosseno reduz o lr suavemente até o fim de cada etapa.
+
+## 2026-10-28 · TODOs da Fase 2 implementados pelo Claude (a pedido)
+
+- **Contexto:** a regra do CLAUDE.md era o aluno escrever a troca da cabeça e o loop de treino. Depois de estudar a teoria e fazer os exercícios (Linear, softmax/argmax, trocar `rede2[-1]`), o aluno pediu para o Claude finalizar a etapa e deixar a prática para **exercícios no fim do projeto**.
+- **Como ficou:** os comentários de TODO viraram explicações linha a linha em `models/build.py` e `train.py`. Os testes de `tests/test_model.py` e `tests/test_train.py` servem de gabarito para os exercícios futuros.
+
+## 2026-10-28 · "Bloco" no fine-tuning = bloco residual (ResNet) / bloco da `features` (MobileNet)
+
+- **Problema encontrado no smoke test:** contar `layer1..layer4` como blocos fazia `unfreeze_last: 3` descongelar 99% da ResNet18 (cada layer é enorme), contra 72% da MobileNet.
+- **Correção:** na ResNet, contar os blocos residuais de dentro dos layers (8 na ResNet18, 16 na ResNet50).
+- **Por que ainda é muito (86% / 64% / 72%):** os parâmetros se concentram no fim da rede, onde há mais canais. É normal, e com lr 10x menor o ajuste continua delicado.
+- **Ponto para estudar depois:** com a base congelada, o BatchNorm em `model.train()` ainda atualiza as estatísticas (média/variância) dos batches. Algumas receitas deixam o BN congelado em `eval()`. Vale testar se a acurácia mudar muito.

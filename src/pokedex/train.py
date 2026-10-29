@@ -5,7 +5,6 @@ Uso:
     python -m pokedex.train --arch resnet18 --smoke-test     # teste rápido na CPU
     python -m pokedex.train --arch small_cnn                 # baseline do zero (etapa única)
 
-Partes marcadas com `# TODO` são suas (CLAUDE.md, Fase 2).
 """
 
 import argparse
@@ -56,37 +55,41 @@ def train_one_epoch(
     device: torch.device,
 ) -> tuple[float, float]:
     """Uma passada pelo treino. Devolve (loss média, acurácia)."""
-    # TODO: implemente o loop de treino de UMA época.
-    #
-    # Antes do loop:
-    #   - coloque o modelo em modo de treino (qual método? por que isso importa para
-    #     Dropout e BatchNorm?)
-    #   - zere acumuladores: soma da loss, acertos, total de exemplos
-    #
-    # Para cada (images, labels) em `loader`:
-    #   1. mova images e labels para `device`
-    #   2. zere os gradientes do otimizador (o que acontece se esquecer?)
-    #   3. forward: logits = model(images)
-    #   4. loss = criterion(logits, labels)
-    #   5. backward: calcule os gradientes
-    #   6. dê um passo do otimizador
-    #   7. acumule: loss.item() * batch_size  (por que multiplicar pelo tamanho do batch?)
-    #              acertos = (logits.argmax(dim=1) == labels).sum().item()
-    #
-    # Devolva (soma_loss / total, acertos / total).
-    raise NotImplementedError("TODO: train_one_epoch")
+    # train(): liga o Dropout e faz o BatchNorm usar/atualizar as estatísticas do batch.
+    model.train()
+    total_loss, correct, total = 0.0, 0, 0
+    for images, labels in loader:
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()  # o PyTorch SOMA gradientes; sem zerar, misturaria batches
+        logits = model(images)  # 1. forward: palpites
+        loss = criterion(logits, labels)  # 2. quanto errou
+        loss.backward()  # 3. gradiente de cada peso: "para que lado ajustar"
+        optimizer.step()  # 4. ajusta os pesos um pouquinho
+
+        # loss.item() é a MÉDIA do batch; vezes o tamanho = soma. O último batch pode
+        # ser menor, então somar e dividir pelo total no fim dá a média correta.
+        total_loss += loss.item() * labels.size(0)
+        correct += (logits.argmax(dim=1) == labels).sum().item()
+        total += labels.size(0)
+    return total_loss / total, correct / total
 
 
-@torch.no_grad()
+@torch.no_grad()  # sem gradientes: menos memória e mais rápido (não vamos treinar aqui)
 def evaluate_epoch(
     model: nn.Module, loader: DataLoader, criterion: nn.Module, device: torch.device
 ) -> tuple[float, float]:
     """Avalia sem treinar. Devolve (loss média, acurácia)."""
-    # TODO: parecido com train_one_epoch, mas SEM backward e SEM optimizer.
-    #   - qual modo do modelo usar aqui?
-    #   - o decorador @torch.no_grad() acima já desliga o cálculo de gradientes.
-    #     Pergunta para pensar: o que você ganharia em memória/velocidade com isso?
-    raise NotImplementedError("TODO: evaluate_epoch")
+    # eval(): desliga o Dropout e faz o BatchNorm usar as estatísticas aprendidas
+    # (resultado determinístico e o modelo não muda).
+    model.eval()
+    total_loss, correct, total = 0.0, 0, 0
+    for images, labels in loader:
+        images, labels = images.to(device), labels.to(device)
+        logits = model(images)
+        total_loss += criterion(logits, labels).item() * labels.size(0)
+        correct += (logits.argmax(dim=1) == labels).sum().item()
+        total += labels.size(0)
+    return total_loss / total, correct / total
 
 
 def run_stage(
@@ -101,26 +104,40 @@ def run_stage(
     best: BestCheckpoint,
 ) -> list[dict]:
     """Treina uma etapa por `epochs` épocas. Devolve o histórico (uma linha por época)."""
-    # TODO: implemente o laço de épocas de uma etapa.
-    #
-    # 1. Crie o otimizador AdamW passando SÓ os parâmetros treináveis:
-    #       params = [p for p in model.parameters() if p.requires_grad]
-    #    Use `lr` e `weight_decay`. Pergunta: por que filtrar os congelados?
-    #
-    # 2. (Opcional, recomendado) Um scheduler que reduz o lr ao longo da etapa, ex.:
-    #       torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-    #    chamando `scheduler.step()` no fim de cada época.
-    #
-    # 3. Para cada época:
-    #       - train_one_epoch(...) com loaders["train"]
-    #       - evaluate_epoch(...)  com loaders["val"]   (NUNCA o "test" aqui. Por quê?)
-    #       - best.update(model, val_acc, {"stage": stage, "epoch": epoch})
-    #       - print de uma linha com época, losses e acurácias (e se salvou)
-    #       - acrescente ao histórico um dict com as chaves:
-    #           stage, epoch, train_loss, train_acc, val_loss, val_acc
-    #
-    # 4. Devolva o histórico.
-    raise NotImplementedError("TODO: run_stage")
+    # Só os parâmetros treináveis vão para o otimizador: os congelados não têm gradiente
+    # e o AdamW gastaria memória guardando estado para eles à toa.
+    params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
+    # Cosseno: o lr começa em `lr` e desce suavemente até ~0 no fim da etapa.
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+
+    history = []
+    for epoch in range(1, epochs + 1):
+        start = time.time()
+        train_loss, train_acc = train_one_epoch(
+            model, loaders["train"], criterion, optimizer, device
+        )
+        # Validação, NUNCA o teste: o teste só é usado uma vez, no fim. Se escolhêssemos o
+        # melhor modelo olhando o teste, a nota do teste deixaria de ser imparcial.
+        val_loss, val_acc = evaluate_epoch(model, loaders["val"], criterion, device)
+        scheduler.step()
+        saved = best.update(model, val_acc, {"stage": stage, "epoch": epoch})
+        print(
+            f"[{stage}] época {epoch}/{epochs} · treino loss {train_loss:.3f} acc {train_acc:.3f}"
+            f" · val loss {val_loss:.3f} acc {val_acc:.3f} · {time.time() - start:.0f}s"
+            + (" · salvo" if saved else "")
+        )
+        history.append(
+            {
+                "stage": stage,
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "train_acc": train_acc,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+            }
+        )
+    return history
 
 
 def plan_stages(cfg: dict, arch: str) -> list[tuple[str, int, float]]:

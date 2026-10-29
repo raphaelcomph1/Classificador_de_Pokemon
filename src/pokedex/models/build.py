@@ -1,8 +1,4 @@
-"""Construção dos modelos: baseline do zero e transfer learning (torchvision).
-
-Partes marcadas com `# TODO` são suas (CLAUDE.md, Fase 2). Os testes em
-`tests/test_model.py` começam como "xfail" e passam a valer quando você implementar.
-"""
+"""Construção dos modelos: baseline do zero e transfer learning (torchvision)."""
 
 import torch
 from torch import nn
@@ -44,51 +40,62 @@ def load_backbone(arch: str, pretrained: bool) -> nn.Module:
 
 def replace_head(model: nn.Module, arch: str, num_classes: int) -> nn.Module:
     """Troca a última camada (1000 classes do ImageNet) por uma com `num_classes` saídas."""
-    # TODO: troque a camada final do modelo.
-    #
-    # Passo 1 — descubra onde ela está. Rode no terminal:
-    #     python -c "from pokedex.models.build import load_backbone; print(load_backbone('resnet18', False))"
-    #   e repita com 'mobilenet_v3_large'. Olhe as ÚLTIMAS linhas: qual atributo guarda a
-    #   camada `Linear(in_features=..., out_features=1000)`? Os nomes são diferentes nas duas famílias.
-    #
-    # Passo 2 — a camada nova precisa receber o MESMO número de entradas que a antiga
-    #   (`in_features`) e devolver `num_classes` saídas. Leia `in_features` da camada antiga
-    #   em vez de escrever o número fixo; assim o código vale para resnet18 E resnet50.
-    #
-    # Passo 3 — substitua com `nn.Linear(...)`. Dica: em um `nn.Sequential` dá para
-    #   atribuir por índice, ex.: `seq[-1] = ...`.
-    #
-    # Use `arch.startswith("resnet")` / `arch.startswith("mobilenet")` para separar os casos.
-    # Pergunta para pensar: por que a camada nova começa com pesos aleatórios e isso não é problema?
-    raise NotImplementedError("TODO: replace_head")
+    # A camada nova mantém as ENTRADAS da antiga (o que a base entrega: 512 na resnet18,
+    # 2048 na resnet50, 1280 na mobilenet) e muda só as SAÍDAS (uma nota por Pokémon).
+    # Ler `in_features` em vez de escrever o número faz o código valer para todas as arquiteturas.
+    if arch.startswith("resnet"):
+        # Na ResNet a cabeça é um atributo único: `(fc): Linear(512 -> 1000)`.
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+    elif arch.startswith("mobilenet"):
+        # Na MobileNet a cabeça é um Sequential; a camada de 1000 classes é a última da lista.
+        # Mesma linha do exercício `rede2[-1] = nn.Linear(rede2[-1].in_features, 150)`.
+        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_classes)
+    else:
+        raise ValueError(f"Sem regra de cabeça para {arch}")
+    # A camada nova nasce com pesos aleatórios: tudo bem, ela é pequena e aprende rápido.
+    return model
+
+
+def _head(model: nn.Module, arch: str) -> nn.Module:
+    """Módulo da cabeça: `fc` na ResNet, `classifier` inteiro na MobileNet."""
+    # Na MobileNet o classifier todo (Linear 960->1280 + Hardswish + Dropout + Linear nova)
+    # foi treinado para o ImageNet, então tratamos ele inteiro como cabeça.
+    return model.fc if arch.startswith("resnet") else model.classifier
 
 
 def head_parameters(model: nn.Module, arch: str) -> list[nn.Parameter]:
-    """Parâmetros da cabeça (a parte que você trocou em `replace_head`)."""
-    # TODO: devolva `list(<módulo da cabeça>.parameters())`.
-    #   Para o mobilenet, considere a cabeça como o `classifier` inteiro (não só a última Linear):
-    #   as camadas antes dela no classifier também foram treinadas para o ImageNet.
-    raise NotImplementedError("TODO: head_parameters")
+    """Parâmetros da cabeça (pesos e bias das camadas da cabeça)."""
+    return list(_head(model, arch).parameters())
 
 
 def freeze_backbone(model: nn.Module, arch: str) -> None:
     """Etapa 1: congela tudo, menos a cabeça."""
-    # TODO:
-    #   1. percorra `model.parameters()` e desligue o gradiente (`param.requires_grad = False`);
-    #   2. religue só os de `head_parameters(model, arch)`.
-    # Pergunta para pensar: o que muda no `backward()` para um parâmetro com requires_grad=False?
-    raise NotImplementedError("TODO: freeze_backbone")
+    # requires_grad=False -> o backward() não calcula gradiente para o parâmetro e o
+    # otimizador não o altera. Bônus: economiza memória e tempo.
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in head_parameters(model, arch):
+        param.requires_grad = True
+
+
+def _backbone_blocks(model: nn.Module, arch: str) -> list[nn.Module]:
+    """Blocos da base, do primeiro (bordas/cores) ao último (partes de objetos)."""
+    if arch.startswith("resnet"):
+        # Cada layerN tem vários blocos residuais (2 na resnet18, 3–6 na resnet50). Contamos
+        # os blocos residuais, e não os layers: "3 blocos" fica com tamanho parecido nas duas
+        # famílias (3 de 4 layers seria quase a rede inteira).
+        layers = [model.layer1, model.layer2, model.layer3, model.layer4]
+        return [block for layer in layers for block in layer]
+    return list(model.features)  # MobileNet: 17 blocos em sequência
 
 
 def unfreeze_last_blocks(model: nn.Module, arch: str, n_blocks: int) -> None:
     """Etapa 2 (fine-tuning): descongela os `n_blocks` últimos blocos da base."""
-    # TODO: liste os blocos da base em ordem e ligue `requires_grad = True` nos `n_blocks` últimos.
-    #   - mobilenet_v3: os blocos estão em `model.features` (é um Sequential: dá para fatiar,
-    #     `model.features[-n_blocks:]`).
-    #   - resnet: os blocos "grandes" são `layer1`, `layer2`, `layer3`, `layer4`.
-    #     Monte a lista [model.layer1, ..., model.layer4] e pegue os últimos `n_blocks`.
-    # Pergunta para pensar: por que descongelar os ÚLTIMOS blocos e não os primeiros?
-    raise NotImplementedError("TODO: unfreeze_last_blocks")
+    # Só os ÚLTIMOS: eles detectam coisas específicas (partes de objetos) e podem se
+    # especializar em Pokémon. Os primeiros (bordas, cores) já servem para qualquer imagem.
+    for block in _backbone_blocks(model, arch)[-n_blocks:]:
+        for param in block.parameters():
+            param.requires_grad = True
 
 
 def build_model(arch: str, num_classes: int, pretrained: bool = True) -> nn.Module:
