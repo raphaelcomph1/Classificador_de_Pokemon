@@ -66,3 +66,23 @@ def test_app_shows_top3_and_card_after_upload(monkeypatch: pytest.MonkeyPatch) -
     assert len(at.radio[0].options) == 3
     assert any("#025" in md.value for md in at.markdown)
     assert any("Fraco contra" in md.value for md in at.markdown)
+
+
+@pytest.mark.skipif(not HAS_MODEL, reason="modelo treinado não encontrado")
+def test_camera_mode_has_resolution_selector() -> None:
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.radio(key="mode").set_value("📷 Câmera").run()
+    assert not at.exception
+    assert at.selectbox[0].options == ["480p", "720p", "1080p"]
+    assert at.selectbox[0].value == "720p"
+    assert len(at.camera_input) == 1
+    assert len(at.file_uploader) == 0  # só o campo do modo escolhido aparece
+
+
+@pytest.mark.skipif(not HAS_MODEL, reason="modelo treinado não encontrado")
+def test_paste_mode_renders() -> None:
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.radio(key="mode").set_value("📋 Colar").run()
+    assert not at.exception
+    assert len(at.file_uploader) == 0 and len(at.camera_input) == 0
+    assert at.info[0].value.startswith("Envie uma imagem")

@@ -175,3 +175,10 @@ Os três modelos levaram ~10 min, apesar de terem tamanhos muito diferentes. O g
 - **Número da Pokédex:** vem da **espécie**, não do id do Pokémon. Na API, o Alolan Sandslash tem id 10102 (id de *forma*), mas é a espécie #028.
 - **Fraquezas:** calculadas multiplicando as relações de dano de cada tipo (ex.: Charizard, Fogo/Voador, recebe 2 × 2 = 4x de Pedra; Voador anula Terra → 0x). A tabela de tipos é a **atual** (com o tipo Fada), não a da Gen 1 original.
 - **Limiar de "não tenho certeza" (40%):** com `label_smoothing=0.1`, o modelo raramente passa de ~95% de confiança, e acertos corretos às vezes ficam em 55–65% (ex.: Alolan Sandslash 58%, Charizard 64%). Um limiar de 50% assustaria o usuário à toa.
+
+## 2026-10-29 · Pokédex: colar imagem e resolução da câmera
+
+- **Colar imagem:** o `st.file_uploader` não aceita Ctrl+V. Usei o componente `streamlit-paste-button` (MIT, ~3 KB de JavaScript, revisado antes de instalar). Ele só lê a área de transferência quando o botão é clicado. Funciona no Chrome/Edge. No Firefox depende da versão, porque a API `navigator.clipboard.read` tem suporte limitado.
+- **Modos em vez de abas:** com 3 fontes de imagem, as abas deixavam várias entradas ativas ao mesmo tempo (qual vale?). Um seletor mostra só o campo do modo escolhido.
+- **Transparência:** imagens coladas costumam ser PNG com fundo transparente. A conversão foi separada em `to_rgb()` e é usada tanto no treino quanto na previsão, então o fundo vira **branco** nos dois casos. Antes, imagens já abertas pelo PIL viravam fundo preto no `Predictor`.
+- **Resolução da câmera:** o `st.camera_input(resolution=...)` aceita 480p, 720p e 1080p, e o padrão ficou em 720p (`configs/app.yaml`). Ressalva: o modelo reduz tudo para 224×224, então resolução maior ajuda pouco na acurácia. O ganho real é poder enquadrar o Pokémon com mais nitidez quando ele está pequeno na cena.

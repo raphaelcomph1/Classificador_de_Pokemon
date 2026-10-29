@@ -8,9 +8,10 @@ from typing import BinaryIO
 
 import streamlit as st
 from PIL import Image
+from streamlit_paste_button import paste_image_button
 
 from pokedex.config import load_config, project_path
-from pokedex.data.datasets import load_rgb
+from pokedex.data.datasets import load_rgb, to_rgb
 from pokedex.pokeapi import (
     STAT_NAMES,
     TYPE_COLORS,
@@ -101,7 +102,7 @@ def show_card(info: PokemonInfo) -> None:
 
 def show_result(source: BinaryIO | Image.Image) -> None:
     """Fluxo completo para uma imagem: previsão + cartão do Pokémon escolhido."""
-    image = source if isinstance(source, Image.Image) else load_rgb(source)
+    image = to_rgb(source) if isinstance(source, Image.Image) else load_rgb(source)
     predictions = get_predictor().predict(image, k=cfg["top_k"])
 
     col_image, col_preds = st.columns([1, 1], gap="large")
@@ -142,17 +143,42 @@ def main() -> None:
         )
         st.caption("Não reconhece Nidoran♀ e Nidoran♂ (ausentes do dataset de treino).")
 
-    upload_tab, camera_tab = st.tabs(["📁 Enviar imagem", "📷 Câmera"])
-    with upload_tab:
-        uploaded = st.file_uploader("Imagem", type=["jpg", "jpeg", "png", "webp"])
-    with camera_tab:
-        photo = st.camera_input("Tire uma foto")
-
-    source = uploaded or photo
+    # Um modo por vez: só o campo escolhido aparece, então nunca há duas imagens "concorrendo".
+    mode = st.radio("Como enviar a imagem?", list(INPUT_MODES), horizontal=True, key="mode")
+    source = INPUT_MODES[mode]()
     if source is None:
         st.info("Envie uma imagem para começar.")
         return
     show_result(source)
+
+
+def input_file() -> BinaryIO | None:
+    return st.file_uploader("Imagem", type=["jpg", "jpeg", "png", "webp"])
+
+
+def input_paste() -> Image.Image | None:
+    """Botão que lê a imagem da área de transferência (Ctrl+C numa imagem ou um print)."""
+    st.caption(
+        "Copie uma imagem (botão direito → **Copiar imagem**, ou um print com **Win+Shift+S**) "
+        "e clique no botão abaixo."
+    )
+    pasted = paste_image_button("📋 Colar imagem", key="paste", errors="raise")
+    return pasted.image_data
+
+
+def input_camera() -> BinaryIO | None:
+    resolution = st.selectbox(
+        "Resolução da câmera",
+        CAMERA_RESOLUTIONS,
+        index=CAMERA_RESOLUTIONS.index(cfg["camera_resolution"]),
+        help="Mais resolução = foto mais nítida, mas arquivo maior. "
+        "O modelo reduz tudo para 224×224, então 720p já é suficiente.",
+    )
+    return st.camera_input("Tire uma foto", resolution=resolution)
+
+
+CAMERA_RESOLUTIONS = ["480p", "720p", "1080p"]
+INPUT_MODES = {"📁 Arquivo": input_file, "📋 Colar": input_paste, "📷 Câmera": input_camera}
 
 
 main()

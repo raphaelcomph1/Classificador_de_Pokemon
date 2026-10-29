@@ -1,6 +1,7 @@
 """Datasets e DataLoaders a partir de processed/{train,val,test}/<classe>/."""
 
 from pathlib import Path
+from typing import BinaryIO
 
 import torch
 from PIL import Image
@@ -12,14 +13,19 @@ from pokedex.data.transforms import eval_transforms, train_transforms
 SPLITS = ("train", "val", "test")
 
 
-def load_rgb(path: str | Path) -> Image.Image:
-    """Abre a imagem em RGB. Transparência vira fundo branco (e não preto)."""
+def to_rgb(img: Image.Image) -> Image.Image:
+    """Converte para RGB. Transparência vira fundo branco (e não preto)."""
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        rgba = img.convert("RGBA")
+        background = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+        return Image.alpha_composite(background, rgba).convert("RGB")
+    return img.convert("RGB")
+
+
+def load_rgb(path: str | Path | BinaryIO) -> Image.Image:
+    """Abre a imagem (caminho ou arquivo já aberto) em RGB, com fundo branco."""
     with Image.open(path) as img:
-        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
-            rgba = img.convert("RGBA")
-            background = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
-            return Image.alpha_composite(background, rgba).convert("RGB")
-        return img.convert("RGB")
+        return to_rgb(img)
 
 
 def build_datasets(processed_dir: Path, image_size: int) -> dict[str, ImageFolder]:

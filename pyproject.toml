@@ -30,7 +30,10 @@ ml = [
     "seaborn>=0.13",
 ]
 # Fase 3: interface
-app = ["streamlit>=1.45"]
+app = [
+    "streamlit>=1.45",  # camera_input com resolution
+    "streamlit-paste-button>=0.1.2",  # botão de colar imagem
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

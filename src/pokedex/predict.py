@@ -11,7 +11,7 @@ import torch
 from PIL import Image
 
 from pokedex.config import project_path
-from pokedex.data.datasets import load_rgb
+from pokedex.data.datasets import load_rgb, to_rgb
 from pokedex.data.transforms import eval_transforms
 from pokedex.models.checkpoint import load_model
 from pokedex.utils import get_device
@@ -29,9 +29,8 @@ class Predictor:
     @torch.no_grad()
     def predict(self, image: Image.Image | str | Path, k: int = 3) -> list[tuple[str, float]]:
         """Top-k (classe, probabilidade), da mais provável para a menos."""
-        if not isinstance(image, Image.Image):
-            image = load_rgb(image)
-        batch = self.transform(image.convert("RGB")).unsqueeze(0).to(self.device)
+        image = to_rgb(image) if isinstance(image, Image.Image) else load_rgb(image)
+        batch = self.transform(image).unsqueeze(0).to(self.device)
         probs = torch.softmax(self.model(batch), dim=1)[0]
         top = torch.topk(probs, k=min(k, len(self.classes)))
         return [(self.classes[i], float(p)) for p, i in zip(top.values, top.indices, strict=True)]

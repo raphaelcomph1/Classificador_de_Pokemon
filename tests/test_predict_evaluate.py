@@ -53,3 +53,11 @@ def test_compute_metrics_known_values() -> None:
     assert m["top3_accuracy"] == 1.0
     assert m["f1_per_class"]["Pikachu"] == 0.0
     assert m["most_confused"] == [{"true": "Pikachu", "predicted": "Charmander", "count": 1}]
+
+
+def test_predictor_treats_transparency_as_white(checkpoint: Path) -> None:
+    """Imagem PIL transparente (ex.: colada) deve dar o mesmo resultado que fundo branco."""
+    predictor = Predictor(checkpoint)
+    transparent = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    white = Image.new("RGB", (64, 64), (255, 255, 255))
+    assert predictor.predict(transparent, k=4) == predictor.predict(white, k=4)
