@@ -48,7 +48,7 @@ def replace_head(model: nn.Module, arch: str, num_classes: int) -> nn.Module:
         model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif arch.startswith("mobilenet"):
         # Na MobileNet a cabeça é um Sequential; a camada de 1000 classes é a última da lista.
-        # Mesma linha do exercício `rede2[-1] = nn.Linear(rede2[-1].in_features, 150)`.
+        # Num Sequential dá para trocar um item por índice, como numa lista: `seq[-1] = ...`.
         model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_classes)
     else:
         raise ValueError(f"Sem regra de cabeça para {arch}")

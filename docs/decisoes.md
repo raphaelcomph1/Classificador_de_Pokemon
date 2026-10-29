@@ -109,10 +109,11 @@ Formato: data · decisão · alternativas · por quê.
 - **CrossEntropy com `label_smoothing=0.1`:** em vez de exigir 100% de certeza na classe correta, o alvo vira 90% + 10% espalhado. Isso reduz a confiança excessiva, o que importa porque a Pokédex vai mostrar probabilidades no top-3.
 - **AdamW, weight decay 1e-4, scheduler cosseno:** o AdamW é um bom padrão para fine-tuning e converge sem muito ajuste. O cosseno reduz o lr suavemente até o fim de cada etapa.
 
-## 2026-10-28 · TODOs da Fase 2 implementados pelo Claude (a pedido)
+## 2026-10-28 · Troca da cabeça, congelamento e loop de treino
 
-- **Contexto:** a regra do CLAUDE.md era o aluno escrever a troca da cabeça e o loop de treino. Depois de estudar a teoria e fazer os exercícios (Linear, softmax/argmax, trocar `rede2[-1]`), o aluno pediu para o Claude finalizar a etapa e deixar a prática para **exercícios no fim do projeto**.
-- **Como ficou:** os comentários de TODO viraram explicações linha a linha em `models/build.py` e `train.py`. Os testes de `tests/test_model.py` e `tests/test_train.py` servem de gabarito para os exercícios futuros.
+- **Implementado:** `replace_head`, `head_parameters`, `freeze_backbone`, `unfreeze_last_blocks` (`models/build.py`) e `train_one_epoch`, `evaluate_epoch`, `run_stage` (`train.py`), com comentários explicando cada passo.
+- **Validação:** `tests/test_model.py` confere a forma da saída, que só a cabeça muda e o que fica congelado em cada etapa. `tests/test_train.py` confere que o treino altera os pesos, que a avaliação não altera e que o modelo consegue decorar um conjunto minúsculo (teste clássico de sanidade do loop).
+- **Revisão futura:** reimplementar essas funções do zero, usando os testes como gabarito.
 
 ## 2026-10-28 · "Bloco" no fine-tuning = bloco residual (ResNet) / bloco da `features` (MobileNet)
 

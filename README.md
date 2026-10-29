@@ -39,4 +39,13 @@ python -m pokedex.train --arch small_cnn --smoke-test        # teste rápido na 
 python -m pokedex.train --arch mobilenet_v3_large            # treino de verdade (Colab/GPU)
 python -m pokedex.evaluate models/mobilenet_v3_large/best.pt # métricas no teste
 python -m pokedex.predict imagem.jpg --checkpoint models/mobilenet_v3_large/best.pt
-```n
+```
+
+## Documentação
+
+- `docs/dados.md`: relatório do dataset (contagens, desbalanceamento, duplicatas, split).
+- `docs/decisoes.md`: decisões técnicas, com alternativas consideradas e justificativas.
+
+## Aviso
+
+As imagens do dataset vêm de busca na web e podem ter direitos autorais; elas não são redistribuídas neste repositório.
